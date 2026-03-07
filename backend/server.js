@@ -638,14 +638,7 @@ app.put('/api/settings/:key', async (req, res) => {
 });
 
 // =========================================================
-// 🚀 8. รองรับ React Router ฝั่งหน้าบ้าน & สั่งรัน Server
-// =========================================================
-// โค้ดนี้ต้องอยู่ "ล่างสุด" ก่อน app.listen เสมอ!
-app.use(express.static(path.join(__dirname, '../dist')));
-
-app.use((req, res) => {
-  res.sendFile(path.resolve(__dirname, '../dist/index.html'));
-});
+// 🚀 8. Backend-only API (Frontend is hosted on Vercel)
 
 // สั่งให้ Server เริ่มทำงาน
 app.listen(PORT, () => {
