@@ -308,7 +308,7 @@ app.post('/api/orders', async (req, res) => {
       ? `${process.env.VITE_API_URL}/admin/orders`
       : `http://localhost:5173/admin/orders`;
 
-    const messageText = `📢 มีออเดอร์ใหม่จากหน้าเว็บ!\n` +
+    const messageText = `📢 มี Order เข้าแล้วนะะ ตรวจสอบให้หน่อย!\n` +
       `--------------------------\n` +
       `👤 ลูกค้า: ${customerName}${customerLineDisplayName ? ` (ชื่อไลน์: ${customerLineDisplayName})` : ''}\n` +
       `📞 เบอร์ติดต่อ: ${customerContact}\n` +
