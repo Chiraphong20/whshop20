@@ -260,7 +260,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete }
       cancelText: 'ยกเลิก',
       async onOk() {
         try {
-          const response = await fetch(`http://localhost:5000/api/products?id=${id}`, {
+          const response = await fetch(`${API_URL}/api/products?id=${id}`, {
             method: 'DELETE',
           });
 
@@ -294,7 +294,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete }
         try {
           // ยิง API ลบทีละตัวโดยใช้ Promise.all
           const deletePromises = selectedIds.map(id =>
-            fetch(`http://localhost:5000/api/products?id=${id}`, { method: 'DELETE' })
+            fetch(`${API_URL}/api/products?id=${id}`, { method: 'DELETE' })
           );
           await Promise.all(deletePromises);
 
