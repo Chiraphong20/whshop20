@@ -142,14 +142,20 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
         }
 
         let paymentInfo = "";
-        if (paymentSettings && paymentSettings.bankName) {
+        // แสดงบัญชีธนาคารเฉพาะตอนที่ยังไม่ต้องส่งของ
+        if (paymentSettings && paymentSettings.bankName && !['SHIPPED', 'COMPLETED'].includes(order.status)) {
             paymentInfo = `\n\n🏦 ธนาคาร: ${paymentSettings.bankName}\nชื่อบัญชี: ${paymentSettings.accountName}\nเลขบัญชี: ${paymentSettings.accountNumber}`;
             if (paymentSettings.promptpayQr) {
                 paymentInfo += `\nหรือสแกน QR Code: ${paymentSettings.promptpayQr}`;
             }
         }
 
-        return `${headerTitle}\nคุณลูกค้า: ${order.customerName}\nออเดอร์: #${order.id}\nผู้ดูแล: ${order.managedBy || adminName}\n------------------\n${itemsList}\n${financialSummary}${paymentInfo}\n\nเมื่อโอนเงินแล้วแจ้งสลิปได้เลยนะครับ ขอบคุณครับ 🙏`;
+        let footerText = `\n\nเมื่อโอนเงินแล้วแจ้งสลิปได้เลยนะครับ ขอบคุณครับ 🙏`;
+        if (['SHIPPED', 'COMPLETED'].includes(order.status) || order.trackingNumber) {
+            footerText = `\n\n🚚 ขนส่ง: ${order.courier || '-'}\n📦 เลขพัสดุ: ${order.trackingNumber || '(รอแจ้ง)'}\n\nจัดส่งเรียบร้อยแล้วครับ ขอบคุณที่อุดหนุนครับ 🙏😊`;
+        }
+
+        return `${headerTitle}\nคุณลูกค้า: ${order.customerName}\nออเดอร์: #${order.id}\nผู้ดูแล: ${order.managedBy || adminName}\n------------------\n${itemsList}\n${financialSummary}${paymentInfo}${footerText}`;
     };
 
     const handleCopyOrderText = (order: Order) => {
