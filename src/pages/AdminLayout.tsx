@@ -72,7 +72,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ orders }) => {
   if (isSuperAdmin) {
     menus.push({ name: 'โปรโมชั่น (Post)', icon: <FileText size={20} />, path: '/admin/posts' });
     menus.push({ name: 'จัดการแอดมิน (Users)', icon: <Users size={20} />, path: '/admin/users' });
-    menus.push({ name: 'ตั้งค่าระบบ', icon: <Settings size={20} />, path: '/admin/settings' });
+    menus.push({ name: 'การชำระเงิน', icon: <Settings size={20} />, path: '/admin/settings' });
   }
 
   const handleLogout = () => {
@@ -174,8 +174,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ orders }) => {
             to="/admin/profile"
             onClick={() => setIsSidebarOpen(false)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${path === '/admin/profile'
-                ? 'bg-orange-600 text-white'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              ? 'bg-orange-600 text-white'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
           >
             <UserCircle size={20} />
