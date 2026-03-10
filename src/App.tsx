@@ -126,19 +126,34 @@ const App: React.FC = () => {
 
     const setupLiff = async () => {
       const liffId = import.meta.env.VITE_LIFF_ID;
-      if (!liffId) return;
+      console.log('[LIFF] LIFF_ID =', liffId);
+      if (!liffId) {
+        console.warn('[LIFF] ไม่พบ VITE_LIFF_ID ใน .env');
+        setIsLiffReady(true);
+        return;
+      }
 
       try {
         await liff.init({ liffId });
+        console.log('[LIFF] init สำเร็จ | isInClient:', liff.isInClient(), '| isLoggedIn:', liff.isLoggedIn());
+
         if (liff.isLoggedIn()) {
           const profile = await liff.getProfile();
+          console.log('[LIFF] userId:', profile.userId);
           setCustomerLineUserId(profile.userId);
           setCustomerLineDisplayName(profile.displayName || '');
           setCustomerLinePictureUrl(profile.pictureUrl || '');
+        } else if (liff.isInClient()) {
+          // อยู่ใน LINE App แต่ยังไม่ได้ login → บังคับ login
+          console.warn('[LIFF] isInClient=true แต่ isLoggedIn=false → สั่ง login()');
+          liff.login();
+          return; // หยุดรอ redirect กลับมา
+        } else {
+          // เปิดจาก Browser ธรรมดา → ข้ามได้
+          console.log('[LIFF] เปิดจาก Browser — ไม่มี lineUserId');
         }
-        // หมายเหตุ: ไม่สั่ง liff.login() อัตโนมัติที่นี่เพื่อป้องกันการเตะไปหน้า login วนลูป
       } catch (e) {
-        console.error('LIFF init error:', e);
+        console.error('[LIFF] init error:', e);
       } finally {
         setIsLiffReady(true);
       }
