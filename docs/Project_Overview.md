@@ -53,39 +53,35 @@
 
 ระบบ LINE Commerce Pro เป็น **Full-Stack Web Application** แบ่งออกเป็น 3 ชั้นหลัก ได้แก่
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                   ชั้นที่ 1: Frontend (Client)                      │
-│                                                                     │
-│   ┌─────────────────────┐       ┌────────────────────────────────┐  │
-│   │   หน้าร้านลูกค้า   │       │        Admin Dashboard          │  │
-│   │  (LINE LIFF App)   │       │   (Web Browser — Protected)    │  │
-│   │  React 19 + Vite   │       │      React 19 + TypeScript     │  │
-│   └──────────┬──────────┘       └───────────────┬────────────────┘  │
-│              │  HTTPS/REST                       │  HTTPS/REST       │
-│              └───────────────────────────────────┘                  │
-│                             Deploy: Vercel                          │
-└─────────────────────────────────┬───────────────────────────────────┘
-                                  │
-┌─────────────────────────────────▼───────────────────────────────────┐
-│                   ชั้นที่ 2: Backend (Server)                       │
-│                                                                     │
-│                Node.js + Express 5 + JWT + bcryptjs                 │
-│                         PORT: 5000                                  │
-│                       Deploy: Render.com                            │
-│                                                                     │
-│   REST API Endpoints: /api/orders | /api/products | /api/admins     │
-│                       /api/posts  | /api/settings | /api/webhook    │
-└──────────────────┬───────────────────────────┬──────────────────────┘
-                   │ mysql2                     │ LINE SDK / fetch
-┌──────────────────▼──────────────┐  ┌──────────▼──────────────────────┐
-│    ชั้นที่ 3: Database          │  │    External Services             │
-│                                 │  │                                  │
-│         MySQL 8.x               │  │  • LINE Messaging API            │
-│   (5 Tables: admins, orders,    │  │  • LINE Login (OAuth 2.0)        │
-│    products, posts, settings)   │  │  • LINE LIFF                     │
-│                                 │  │  • Cloudinary (รูปภาพ)          │
-└─────────────────────────────────┘  └──────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph FE["☁️ ชั้นที่ 1 — Frontend (Deploy: Vercel)"]
+        LIFF["🛒 หน้าร้านลูกค้า\nLINE LIFF App\nReact 19 + Vite"]
+        ADMIN["⚙️ Admin Dashboard\nWeb Browser (Protected)\nReact 19 + TypeScript"]
+    end
+
+    subgraph BE["🖥️ ชั้นที่ 2 — Backend (Deploy: Render.com)"]
+        API["Node.js + Express 5\nJWT + bcryptjs\nPORT: 5000\n/api/orders | /api/products\n/api/admins | /api/posts\n/api/settings | /api/webhook"]
+    end
+
+    subgraph DB["🗄️ ชั้นที่ 3 — Database"]
+        MYSQL["MySQL 8.x\nadmins | orders\nproducts | posts\nsettings"]
+    end
+
+    subgraph EXT["🔗 External Services"]
+        LINE1["LINE Messaging API\n(แจ้งเตือนออเดอร์)"]
+        LINE2["LINE Login OAuth 2.0\n(Admin Authentication)"]
+        LIFF2["LINE LIFF SDK\n(ระบุตัวตนลูกค้า)"]
+        CDN["Cloudinary\n(รูปภาพสินค้า)"]
+    end
+
+    LIFF -- HTTPS / REST API --> BE
+    ADMIN -- HTTPS / REST API --> BE
+    BE -- mysql2 --> DB
+    BE -- LINE SDK --> LINE1
+    BE -- OAuth --> LINE2
+    LIFF -- LIFF SDK --> LIFF2
+    ADMIN -- Upload --> CDN
 ```
 
 ### 4.2 ผู้ใช้งานของระบบ (Users)
