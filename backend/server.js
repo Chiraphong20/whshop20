@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 5000;
 // 🟢 1. ตั้งค่า LINE Messaging API & Middleware
 // =========================================================
 const lineConfig = {
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || 'Y4YhRd1XCA8Tf2CaWV53f5dbgHzirjbjoorpwFJ1q2EKq9ixuJKPdy3GvWVFMj8EyMbYHjdG/4q129KWDEcs5YbH1WXuFUkaMAxMl3MOOoywophuynZaHB9BXGS6Yl+kH9uX1MU3eEA0LuS2/en7nAdB04t89/1O/w1cDnyilFU=',
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || 's4iF24BZkyPHdmfIyOSAYFq5UnjHagkDOGKfiwu7bouY5sEDMpSiXISHaNOzN2nj4IYjFCii2880amIOtC4o+iAu+FJpkg2tQD90kQqqeas1DGRubPLT6fuqTIGou7A7DFPVykAhMFceBIf1PepsKwdB04t89/1O/w1cDnyilFU=',
   channelSecret: process.env.LINE_CHANNEL_SECRET || 'aacb68a48a5137d86d987420d017aa4f'
 };
 const lineClient = new line.messagingApi.MessagingApiClient(lineConfig);

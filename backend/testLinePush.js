@@ -1,28 +1,48 @@
-const line = require('@line/bot-sdk');
+require('dotenv').config();
 
-const lineConfig = {
-    channelAccessToken: 'Y4YhRd1XCA8Tf2CaWV53f5dbgHzirjbjoorpwFJ1q2EKq9ixuJKPdy3GvWVFMj8EyMbYHjdG/4q129KWDEcs5YbH1WXuFUkaMAxMl3MOOoywophuynZaHB9BXGS6Yl+kH9uX1MU3eEA0LuS2/en7nAdB04t89/1O/w1cDnyilFU=',
-    channelSecret: '8f8aab2552be93a7572b7af6359a00f3'
-};
-const client = new line.messagingApi.MessagingApiClient(lineConfig);
+const TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+const GROUP_ID = process.env.ADMIN_LINE_GROUP_ID;
+
+console.log('📋 Token (first 20 chars):', TOKEN ? TOKEN.substring(0, 20) + '...' : '❌ ไม่พบ TOKEN');
+console.log('📋 Group ID:', GROUP_ID || '❌ ไม่พบ GROUP_ID');
+
+if (!TOKEN || !GROUP_ID) {
+    console.error('\n❌ กรุณาตรวจสอบค่าใน .env ก่อน');
+    process.exit(1);
+}
 
 async function test() {
     try {
-        const uids = ["U9753b0ac3dcffda1e1415ea4e47d8707", "U78ac8360461825bdd0ca31e7bb3ecc6b"];
-        for (const uid of uids) {
-            console.log("Testing push to:", uid);
-            try {
-                await client.pushMessage({
-                    to: uid,
-                    messages: [{ type: 'text', text: 'Test from CLI' }]
-                });
-                console.log("Success for", uid);
-            } catch (e) {
-                console.log("Failed for", uid, ":", e.message, "\nBody:", e.body);
+        const res = await fetch('https://api.line.me/v2/bot/message/push', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${TOKEN}`
+            },
+            body: JSON.stringify({
+                to: GROUP_ID,
+                messages: [{ type: 'text', text: '✅ ทดสอบแจ้งเตือน Order จากระบบ WH Shop\nถ้าคุณเห็นข้อความนี้แสดงว่าระบบทำงานปกติ 🎉' }]
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            console.log('\n✅ ส่งสำเร็จ! ตรวจสอบกลุ่ม LINE ได้เลย');
+        } else {
+            console.error('\n❌ ส่งไม่สำเร็จ:', JSON.stringify(data, null, 2));
+
+            if (data.message?.includes('Invalid reply token')) {
+                console.log('💡 Hint: Group ID อาจผิด');
+            } else if (data.message?.includes('Invalid access token')) {
+                console.log('💡 Hint: Channel Access Token ผิดหรือหมดอายุ');
+            } else if (data.message?.includes('The bot is not a member')) {
+                console.log('💡 Hint: Bot ยังไม่ได้อยู่ในกลุ่มนี้ → เพิ่ม Bot เข้ากลุ่มก่อน');
             }
         }
-    } catch (e) {
-        console.log("Fatal Error:", e);
+    } catch (err) {
+        console.error('\n❌ Network Error:', err.message);
     }
 }
+
 test();
