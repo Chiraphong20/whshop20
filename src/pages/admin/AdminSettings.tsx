@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Input, Button, Form, message, Typography, Divider, Spin } from 'antd';
+import { Input, Button, Form, message, Typography, Divider, Spin } from 'antd';
 import { Save, Building2, CreditCard, User, QrCode } from 'lucide-react';
 import { API_URL, getAuthHeaders } from '../../config';
 
@@ -71,10 +71,7 @@ const AdminSettings: React.FC = () => {
                 <p className="text-gray-500 text-sm mt-1">จัดการข้อมูลพื้นฐานสำหรับการทำงานของระบบ</p>
             </div>
 
-            <Card
-                className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-                styles={{ body: { padding: 0 } }}
-            >
+            <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden bg-white">
                 <div className="bg-indigo-50/50 p-6 border-b border-indigo-100">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
@@ -151,15 +148,16 @@ const AdminSettings: React.FC = () => {
                         </Form>
                     )}
                 </div>
-            </Card>
+            </div>
 
             {/* ตัวอย่างการแสดงผล */}
-            <Card
-                className="rounded-2xl border border-gray-100 shadow-sm mt-6"
-                title={<span className="text-gray-700 font-semibold flex items-center gap-2">👀 ตัวอย่างข้อความที่จะแสดงท้ายสลิปออเดอร์</span>}
-            >
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 font-mono text-sm whitespace-pre-line text-gray-700">
-                    {`<...>
+            <div className="rounded-2xl border border-gray-100 shadow-sm mt-6 bg-white overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100">
+                    <span className="text-gray-700 font-semibold flex items-center gap-2">👀 ตัวอย่างข้อความที่จะแสดงท้ายสลิปออเดอร์</span>
+                </div>
+                <div className="p-6">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 font-mono text-sm whitespace-pre-line text-gray-700">
+                        {`<...>
 ------------------
 💰 ยอดรวมทั้งสิ้น: 1,500 บาท
 
@@ -169,8 +167,9 @@ const AdminSettings: React.FC = () => {
 {รูป QR Code ถ้ามี}
 
 เมื่อโอนเงินแล้วแจ้งสลิปได้เลยนะครับ ขอบคุณครับ 🙏`}
+                    </div>
                 </div>
-            </Card>
+            </div>
         </div>
     );
 };

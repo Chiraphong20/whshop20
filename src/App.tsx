@@ -29,6 +29,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminReport from './pages/admin/AdminReport';
 import AdminSettings from './pages/admin/AdminSettings';
 import LineCallbackPage from './pages/admin/LineCallbackPage';
+import AdminProfile from './pages/admin/AdminProfile';
 
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -326,6 +327,7 @@ const App: React.FC = () => {
             <Route path="users" element={<AdminUsers />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="reports" element={<AdminReport orders={orders} products={products} />} />
+            <Route path="profile" element={<AdminProfile />} />
           </Route>
         </Route>
 

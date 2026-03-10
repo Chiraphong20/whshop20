@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Package, ShoppingBag, FileText, LogOut, Store, LayoutDashboard, BellRing, Users, BarChart2, Menu, X, Settings } from 'lucide-react';
+import { Package, ShoppingBag, FileText, LogOut, Store, LayoutDashboard, BellRing, Users, BarChart2, Menu, X, Settings, UserCircle } from 'lucide-react';
 import { notification } from 'antd';
 import { Order } from '../types';
 
@@ -170,6 +170,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ orders }) => {
         </nav>
 
         <div className="p-4 mt-auto border-t border-slate-800 space-y-2 bg-slate-900">
+          <Link
+            to="/admin/profile"
+            onClick={() => setIsSidebarOpen(false)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${path === '/admin/profile'
+                ? 'bg-orange-600 text-white'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <UserCircle size={20} />
+            <span>โปรไฟล์ของฉัน</span>
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-colors"

@@ -176,6 +176,18 @@ app.patch('/api/admins/:id', async (req, res) => {
   }
 });
 
+// อัปเดตชื่อแสดงผลของแอดมิน (สำหรับหน้า Profile)
+app.patch('/api/admins/:id/profile', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'กรุณาระบุชื่อ' });
+    await pool.execute('UPDATE admins SET name = ? WHERE id = ?', [name.trim(), req.params.id]);
+    res.json({ success: true, message: 'อัปเดตชื่อสำเร็จ' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // (Webhook function ถูกย้ายไปด้านบนเพื่อไม่ให้ติดปัญหา express.json parse body)
 
 // =========================================================
