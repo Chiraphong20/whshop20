@@ -107,7 +107,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ products, addToCa
                         )}
                     </div>
                     {/* ราคา 2 - Strong badge */}
-                    {product.wholesalePrice > 0 && (
+                    {product.wholesalePrice > 20 && (
                         <div className="bg-green-50 border border-green-200 text-green-800 px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1 flex-wrap">
                             <span>🏷️</span>
                             <span>ส่ง <strong>฿{product.wholesalePrice.toLocaleString()}</strong></span>
@@ -117,7 +117,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ products, addToCa
                 </div>
 
                 {/* 📦 ดีลราคาส่ง */}
-                {(product.wholesalePrice ?? 0) > 0 && (product.minWholesaleQty ?? 1) > 1 && (
+                {(product.wholesalePrice ?? 0) > 20 && (product.minWholesaleQty ?? 1) > 1 && (
                     <div className="mb-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 animate-in fade-in duration-300">
                         <div className="flex items-start justify-between gap-3">
                             <div>

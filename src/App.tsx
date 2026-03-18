@@ -113,13 +113,17 @@ const App: React.FC = () => {
 
         if (!isInitial && parsedOrders.length > prevOrdersCount.current) {
           const newCount = parsedOrders.length - prevOrdersCount.current;
-          notification.success({
-            message: <span className="font-bold text-lg text-orange-600">📢 มีออเดอร์ใหม่เข้า!</span>,
-            description: `ได้รับเพิ่ม ${newCount} รายการ`,
-            duration: 0,
-            placement: 'topRight',
-          });
-          playNotificationSound();
+          
+          // แจ้งเตือนเฉพาะฝั่ง Admin (URL ขึ้นต้นด้วย /admin) 
+          if (window.location.pathname.startsWith('/admin')) {
+            notification.success({
+              message: <span className="font-bold text-lg text-orange-600">📢 มีออเดอร์ใหม่เข้า!</span>,
+              description: `ได้รับเพิ่ม ${newCount} รายการ`,
+              duration: 0,
+              placement: 'topRight',
+            });
+            playNotificationSound();
+          }
         }
 
         setOrders(parsedOrders);
