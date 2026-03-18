@@ -143,7 +143,12 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
         }
 
         if (order.deliveryMethod !== 'PICKUP') {
-            financialSummary += ' (ยอดรวมนี้ยังไม่รวมค่าจัดส่ง)';
+            if (order.shippingCost !== undefined && order.shippingCost > 0) {
+                financialSummary += `\n📦 ค่าจัดส่ง: ${order.shippingCost.toLocaleString()} บาท`;
+                financialSummary += `\n💵 ยอดรวมสุทธิ (รวมส่ง): ${(netTotal + order.shippingCost).toLocaleString()} บาท`;
+            } else {
+                financialSummary += ' (ยอดรวมนี้ยังไม่รวมค่าจัดส่ง)';
+            }
         }
 
         let paymentInfo = "";
