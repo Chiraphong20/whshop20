@@ -123,31 +123,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
             {/* กรณีมีทั้งราคาปลีกและส่ง (แสดง 2 ปุ่ม) และราคาปลีกตั้งแต่ 20 บาทขึ้นไป */}
             {product.retailPrice >= 20 && product.wholesalePrice > 0 && product.minWholesaleQty > 1 ? (
               <>
-                {/* 🛒 ปุ่มซื้อปลีก */}
-                <div className="flex justify-between items-center bg-slate-50 p-1.5 rounded-lg border border-slate-100">
-                  <div className="flex-1 min-w-0 pr-1 leading-tight">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-orange-600 font-extrabold text-base sm:text-lg">
-                        ฿{product.retailPrice.toLocaleString()}
-                      </span>
-                      <span className="text-slate-400 text-[10px]">/{product.unit || 'ชิ้น'}</span>
-                    </div>
-                    {(product.unitQty ?? 1) > 1 && (
-                      <div className="text-[9px] text-blue-600 bg-blue-50 font-medium px-1 py-0.5 rounded mt-0.5 inline-block">
-                        📦 1 {product.unit} = {product.unitQty}ชิ้น
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                    className="w-8 h-8 flex-shrink-0 bg-slate-800 text-white rounded-md flex items-center justify-center shadow-md active:scale-90 transition-transform hover:bg-slate-700"
-                    title="หยิบใส่ตะกร้า 1 ชิ้น"
-                  >
-                    <Plus size={18} strokeWidth={3} />
-                  </button>
-                </div>
-
-                {/* 📦 ปุ่มซื้อส่ง */}
+                {/* 📦 ปุ่มซื้อส่ง (ย้ายมาไว้ด้านบนตาม Request) */}
                 <div className="flex justify-between items-center bg-green-50 p-1.5 rounded-lg border border-green-100">
                   <div className="flex-1 min-w-0 pr-1 leading-tight">
                     <div className="text-[10px] text-green-700 font-bold flex items-center gap-1 mb-0.5">
@@ -185,6 +161,30 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
                     className="flex-shrink-0 bg-green-600 text-white text-[10px] font-bold px-2 py-1.5 rounded-md flex items-center justify-center shadow-md active:scale-90 transition-transform hover:bg-green-700"
                   >
                     + {product.minWholesaleQty} ชิ้น
+                  </button>
+                </div>
+
+                {/* 🛒 ปุ่มซื้อปลีก (ย้ายลงมาด้านล่าง) */}
+                <div className="flex justify-between items-center bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+                  <div className="flex-1 min-w-0 pr-1 leading-tight">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-orange-600 font-extrabold text-base sm:text-lg">
+                        ฿{product.retailPrice.toLocaleString()}
+                      </span>
+                      <span className="text-slate-400 text-[10px]">/{product.unit || 'ชิ้น'}</span>
+                    </div>
+                    {(product.unitQty ?? 1) > 1 && (
+                      <div className="text-[9px] text-blue-600 bg-blue-50 font-medium px-1 py-0.5 rounded mt-0.5 inline-block">
+                        📦 1 {product.unit} = {product.unitQty}ชิ้น
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                    className="w-8 h-8 flex-shrink-0 bg-slate-800 text-white rounded-md flex items-center justify-center shadow-md active:scale-90 transition-transform hover:bg-slate-700"
+                    title="หยิบใส่ตะกร้า 1 ชิ้น"
+                  >
+                    <Plus size={18} strokeWidth={3} />
                   </button>
                 </div>
               </>
