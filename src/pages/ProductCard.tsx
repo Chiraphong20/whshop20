@@ -119,40 +119,85 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
             <p className="text-[10px] text-slate-400 mb-0.5 leading-tight">{product.category}</p>
             <h3 className="font-bold text-slate-800 text-xs sm:text-sm line-clamp-2 leading-tight mb-1.5">{product.name}</h3>
           </div>
-          <div className="flex justify-between items-end">
-            <div className="min-w-0 flex-1 pr-1">
-              {/* Pack size badge */}
-              {(product.unitQty ?? 1) > 1 && (
-                <div className="text-[9px] text-blue-600 bg-blue-50 font-medium px-1 py-0.5 rounded mb-1 inline-block leading-tight">
-                  📦 1 {product.unit} = {product.unitQty}ชิ้น
+          <div className="flex flex-col gap-2 mt-auto pt-2 border-t border-slate-100">
+            {/* กรณีมีทั้งราคาปลีกและส่ง (แสดง 2 ปุ่ม) */}
+            {product.retailPrice > 0 && product.wholesalePrice > 0 && product.minWholesaleQty > 1 ? (
+              <>
+                {/* 🛒 ปุ่มซื้อปลีก */}
+                <div className="flex justify-between items-center bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+                  <div className="flex-1 min-w-0 pr-1 leading-tight">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-orange-600 font-extrabold text-base sm:text-lg">
+                        ฿{product.retailPrice.toLocaleString()}
+                      </span>
+                      <span className="text-slate-400 text-[10px]">/{product.unit || 'ชิ้น'}</span>
+                    </div>
+                    {(product.unitQty ?? 1) > 1 && (
+                      <div className="text-[9px] text-blue-600 bg-blue-50 font-medium px-1 py-0.5 rounded mt-0.5 inline-block">
+                        📦 1 {product.unit} = {product.unitQty}ชิ้น
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                    className="w-8 h-8 flex-shrink-0 bg-slate-800 text-white rounded-md flex items-center justify-center shadow-md active:scale-90 transition-transform hover:bg-slate-700"
+                    title="หยิบใส่ตะกร้า 1 ชิ้น"
+                  >
+                    <Plus size={18} strokeWidth={3} />
+                  </button>
                 </div>
-              )}
-              {/* ราคา 1 - Highlight */}
-              <div className="flex items-baseline gap-0.5 flex-wrap">
-                <span className="text-orange-600 font-extrabold text-base sm:text-lg leading-none">
-                  ฿{product.retailPrice > 0 ? product.retailPrice.toLocaleString() : product.wholesalePrice.toLocaleString()}
-                </span>
-                <span className="text-slate-400 text-[10px]">/{product.unit || 'ชิ้น'}</span>
+
+                {/* 📦 ปุ่มซื้อส่ง */}
+                <div className="flex justify-between items-center bg-green-50 p-1.5 rounded-lg border border-green-100">
+                  <div className="flex-1 min-w-0 pr-1 leading-tight">
+                    <div className="text-[10px] text-green-700 font-bold flex items-center gap-1 mb-0.5">
+                      <span className="bg-green-600 text-white px-1 py-0.5 rounded text-[8px] leading-none uppercase tracking-wider">ราคาส่ง</span>
+                      เมื่อสั่ง ≥{product.minWholesaleQty} {product.unit}
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-green-700 font-extrabold text-sm sm:text-base">
+                        ฿{product.wholesalePrice.toLocaleString()}
+                      </span>
+                      <span className="text-green-600/70 text-[10px]">/{product.unit || 'ชิ้น'}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      for(let i=0; i<product.minWholesaleQty; i++) {
+                        onAddToCart(product); 
+                      }
+                    }}
+                    className="flex-shrink-0 bg-green-600 text-white text-[10px] font-bold px-2 py-1.5 rounded-md flex items-center justify-center shadow-md active:scale-90 transition-transform hover:bg-green-700"
+                  >
+                    + {product.minWholesaleQty} ชิ้น
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* กรณีมีราคาเดียว (แสดงแบบเดิมๆ) */
+              <div className="flex justify-between items-end mt-1">
+                <div className="min-w-0 flex-1 pr-1">
+                  {(product.unitQty ?? 1) > 1 && (
+                    <div className="text-[9px] text-blue-600 bg-blue-50 font-medium px-1 py-0.5 rounded mb-1 inline-block leading-tight">
+                      📦 1 {product.unit} = {product.unitQty}ชิ้น
+                    </div>
+                  )}
+                  <div className="flex items-baseline gap-0.5 flex-wrap">
+                    <span className="text-orange-600 font-extrabold text-base sm:text-lg leading-none">
+                      ฿{product.retailPrice > 0 ? product.retailPrice.toLocaleString() : product.wholesalePrice.toLocaleString()}
+                    </span>
+                    <span className="text-slate-400 text-[10px]">/{product.unit || 'ชิ้น'}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                  className="w-9 h-9 flex-shrink-0 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg shadow-slate-900/20 active:scale-90 transition-transform hover:bg-slate-800"
+                >
+                  <Plus size={20} strokeWidth={3} />
+                </button>
               </div>
-              {/* เงื่อนไขราคา 1 */}
-              {product.retailPrice > 0 && product.wholesalePrice > 0 && (
-                <div className="text-[9px] text-slate-400 leading-tight">
-                  (1–{product.minWholesaleQty - 1} {product.unit || 'ชิ้น'})
-                </div>
-              )}
-              {/* ราคา 2 - Strong */}
-              {product.wholesalePrice > 0 && (
-                <div className="text-[9px] text-green-700 font-semibold mt-0.5 leading-tight">
-                  ส่ง: <strong>฿{product.wholesalePrice.toLocaleString()}</strong> (≥{product.minWholesaleQty})
-                </div>
-              )}
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-              className="w-9 h-9 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg shadow-slate-900/20 active:scale-90 transition-transform hover:bg-slate-800"
-            >
-              <Plus size={20} strokeWidth={3} />
-            </button>
+            )}
           </div>
         </div>
       </div>
