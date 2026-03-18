@@ -3,7 +3,8 @@ import {
   Gift, Utensils, Zap, Gamepad2, MoreHorizontal, 
   Coffee, Home, CookingPot, Activity, 
   TrendingUp, Percent, Tent, Box, Plug, 
-  PawPrint, Hammer, Sparkles, Store, Armchair
+  PawPrint, Hammer, Sparkles, Store, Armchair,
+  Heart, Flame, Pencil, Laptop
 } from 'lucide-react';
 
 export const CATEGORIES = [
@@ -25,6 +26,10 @@ export const CATEGORIES = [
   { name: 'สินค้าเทศกาล', icon: <Gift className="w-8 h-8 text-pink-500" />, color: 'bg-pink-50 border-pink-200' },
   { name: 'เซรามิค', icon: <Coffee className="w-8 h-8 text-stone-500" />, color: 'bg-stone-50 border-stone-200' },
   { name: 'อุปกรณ์ขายสินค้า', icon: <Store className="w-8 h-8 text-indigo-500" />, color: 'bg-indigo-50 border-indigo-200' },
-  { name: 'ของใช้ในบ้านและเฟอร์นิเจอร์', icon: <Armchair className="w-8 h-8 text-teal-600" />, color: 'bg-teal-50 border-teal-200' },
+  { name: 'ของใช้ในบ้าน', icon: <Armchair className="w-8 h-8 text-teal-600" />, color: 'bg-teal-50 border-teal-200' },
+  { name: 'กิ๊ฟช็อป', icon: <Heart className="w-8 h-8 text-pink-400" />, color: 'bg-pink-100 border-pink-300' },
+  { name: 'เครื่องบูชา', icon: <Flame className="w-8 h-8 text-red-500" />, color: 'bg-red-50 border-red-200' },
+  { name: 'เครื่องเขียน', icon: <Pencil className="w-8 h-8 text-sky-500" />, color: 'bg-sky-50 border-sky-200' },
+  { name: 'อุปกรณ์ไอที', icon: <Laptop className="w-8 h-8 text-slate-700" />, color: 'bg-slate-100 border-slate-300' },
   { name: 'เบ็ดเตล็ด', icon: <MoreHorizontal className="w-8 h-8 text-gray-500" />, color: 'bg-gray-100 border-gray-200' },
 ];

@@ -5,7 +5,7 @@ import {
   Package, DollarSign, Tag, ScanBarcode, FileSpreadsheet, Download,
   LayoutGrid, List, Filter, Fingerprint
 } from 'lucide-react';
-import { message, Modal } from 'antd';
+import { message, Modal, Select } from 'antd';
 import { API_URL, getAuthHeaders } from '../../config';
 
 // --- Mocks & Types สำหรับ Preview Environment ---
@@ -41,7 +41,8 @@ const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/uplo
 const CATEGORIES_LIST = [
   'ของเล่นเด็ก', 'อุปกรณ์กีฬา', 'อุปกรณ์ทำความสะอาด', 'เครื่องครัว', 'อุปกรณ์แคมปิ้ง',
   'พลาสติก', 'อุปกรณ์ไฟฟ้า', 'เครื่องใช้ไฟฟ้า', 'อุปกรณ์สัตว์เลี้ยง', 'เครื่องมือช่าง',
-  'สินค้าเทศกาล', 'เซรามิค', 'อุปกรณ์ขายสินค้า', 'ของใช้ในบ้านและเฟอร์นิเจอร์', 'เบ็ดเตล็ด'
+  'สินค้าเทศกาล', 'เซรามิค', 'อุปกรณ์ขายสินค้า', 'ของใช้ในบ้าน', 'เบ็ดเตล็ด',
+  'กิ๊ฟช็อป', 'เครื่องบูชา', 'เครื่องเขียน', 'อุปกรณ์ไอที'
 ];
 
 const INITIAL_UNITS = [
@@ -540,7 +541,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete }
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (productBarcode && productBarcode.includes(searchTerm)) ||
       (p.id.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = filterCategory === 'ทั้งหมด' || p.category === filterCategory;
+    const matchesCategory = filterCategory === 'ทั้งหมด' || p.category?.split('/').includes(filterCategory);
     return matchesSearch && matchesCategory;
   }).sort((a, b) => {
     switch (sortBy) {
@@ -918,10 +919,16 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete }
                       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
                         <div className="xl:col-span-1">
                           <label className="block text-sm font-bold text-slate-700 mb-1">หมวดหมู่ <span className="text-red-500">*</span></label>
-                          <select className="w-full border border-slate-200 rounded-lg px-4 py-2.5 outline-none focus:border-slate-400 bg-white text-sm hover:border-slate-300"
-                            value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                            {CATEGORIES_LIST.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                          </select>
+                          <Select 
+                            mode="multiple"
+                            allowClear
+                            size="large"
+                            placeholder="เลือกหมวดหมู่ (ได้หลายอัน)"
+                            className="w-full text-sm"
+                            value={formData.category ? formData.category.split('/') : []} 
+                            onChange={(val: string[]) => setFormData({ ...formData, category: val.join('/') })}
+                            options={CATEGORIES_LIST.map(cat => ({ value: cat, label: cat }))}
+                          />
                         </div>
                         <div className="xl:col-span-3">
                           <label className="block text-sm font-bold text-slate-700 mb-1">ชื่อสินค้า <span className="text-red-500">*</span></label>

@@ -402,7 +402,7 @@ const AdminPosts: React.FC<AdminPostsProps> = () => {
                   {products
                     .filter(p => {
                       const matchSearch = p.name.toLowerCase().includes(productSearch.toLowerCase());
-                      const matchCategory = filterCategory === 'ทั้งหมด' || p.category === filterCategory;
+                      const matchCategory = filterCategory === 'ทั้งหมด' || p.category?.split('/').includes(filterCategory);
                       return matchSearch && matchCategory;
                     })
                     .map(p => {
@@ -431,7 +431,7 @@ const AdminPosts: React.FC<AdminPostsProps> = () => {
                       );
                     })
                   }
-                  {products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) && (filterCategory === 'ทั้งหมด' || p.category === filterCategory)).length === 0 && (
+                  {products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) && (filterCategory === 'ทั้งหมด' || p.category?.split('/').includes(filterCategory))).length === 0 && (
                     <div className="col-span-1 sm:col-span-2 text-center py-12 text-slate-400">
                       <Search className="mx-auto mb-2 opacity-20" size={32} />
                       ไม่พบสินค้าในหมวดหมู่นี้

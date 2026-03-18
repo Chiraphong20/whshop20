@@ -46,7 +46,7 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount 
 
   // กรองเฉพาะหมวดหมู่ และค้นหาชื่อ
   const filtered = products.filter((p) =>
-    p.category === decodedCategory &&
+    p.category?.split('/').includes(decodedCategory) &&
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
