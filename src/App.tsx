@@ -59,9 +59,9 @@ const App: React.FC = () => {
   // 🔊 ระบบแจ้งเตือนเสียง
   // =========================================================
   const playNotificationSound = () => {
-    const audio = new Audio('/notification.mp3');
+    const audio = new Audio('/order_notification.mp3');
     audio.play().catch((err) => {
-      console.log("Audio play blocked by browser");
+      console.log("Audio play blocked by browser", err);
     });
   };
 
