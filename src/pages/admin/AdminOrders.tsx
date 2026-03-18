@@ -152,7 +152,11 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
 
         let footerText = `\n\nเมื่อโอนเงินแล้วแจ้งสลิปได้เลยนะครับ ขอบคุณครับ 🙏`;
         if (['SHIPPED', 'COMPLETED'].includes(order.status) || order.trackingNumber) {
-            footerText = `\n\n🚚 ขนส่ง: ${order.courier || '-'}\n📦 เลขพัสดุ: ${order.trackingNumber || '(รอแจ้ง)'}\n\nจัดส่งเรียบร้อยแล้วครับ ขอบคุณที่อุดหนุนครับ 🙏😊`;
+            if (order.deliveryMethod === 'PICKUP') {
+                footerText = `\n\n🛍️ วิธีรับสินค้า: มารับเองที่ร้าน\n✅ เตรียมสินค้าเรียบร้อยแล้ว ลูกค้าสามารถมารับได้เลยครับ\n\nขอบคุณที่อุดหนุนครับ 🙏😊`;
+            } else {
+                footerText = `\n\n🚚 ขนส่ง: ${order.courier || '-'}\n📦 เลขพัสดุ: ${order.trackingNumber || '(รอแจ้ง)'}\n\nจัดส่งเรียบร้อยแล้วครับ ขอบคุณที่อุดหนุนครับ 🙏😊`;
+            }
         }
 
         return `${headerTitle}\nคุณลูกค้า: ${order.customerName}\nออเดอร์: #${order.id}\nผู้ดูแล: ${order.managedBy || adminName}\n------------------\n${itemsList}\n${financialSummary}${paymentInfo}${footerText}`;
@@ -254,22 +258,33 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
     };
 
     const handleConfirmShippingInfo = () => {
-        if (selectedOrder && trackingNumber) {
-            if (onUpdateShipping) onUpdateShipping(selectedOrder.id, trackingNumber, courier);
-            // ✅ เปลี่ยนจาก SHIPPED เป็น COMPLETED ตามที่ต้องการ
-            onUpdateStatus(selectedOrder.id, 'COMPLETED');
-            setIsShippingModalOpen(false);
-            messageApi.success(`บันทึกเลขพัสดุและเสร็จสิ้นออเดอร์เรียบร้อยแล้ว`);
-        } else {
-            messageApi.warning('กรุณากรอกเลขพัสดุ');
+        if (selectedOrder) {
+            if (selectedOrder.deliveryMethod === 'PICKUP') {
+                onUpdateStatus(selectedOrder.id, 'COMPLETED');
+                setIsShippingModalOpen(false);
+                messageApi.success(`เสร็จสิ้นออเดอร์ (ลูกค้ารับเองที่ร้าน)`);
+            } else if (trackingNumber) {
+                if (onUpdateShipping) onUpdateShipping(selectedOrder.id, trackingNumber, courier);
+                // ✅ เปลี่ยนจาก SHIPPED เป็น COMPLETED ตามที่ต้องการ
+                onUpdateStatus(selectedOrder.id, 'COMPLETED');
+                setIsShippingModalOpen(false);
+                messageApi.success(`บันทึกเลขพัสดุและเสร็จสิ้นออเดอร์เรียบร้อยแล้ว`);
+            } else {
+                messageApi.warning('กรุณากรอกเลขพัสดุ');
+            }
         }
     };
 
     const handleCopyShippingText = () => {
         if (!selectedOrder) return;
-        const trackingText = trackingNumber ? trackingNumber : "(รอแจ้งเลขพัสดุ)";
-        const text = `ออเดอร์ #${selectedOrder.id} จัดส่งเรียบร้อยครับ!\n\n🚚 ขนส่ง: ${courier}\n📦 เลขพัสดุ: ${trackingText}\n\nขอบคุณที่อุดหนุนร้านเรานะครับ โอกาสหน้าเชิญใหม่ครับ 🙏😊`;
-        navigator.clipboard.writeText(text).then(() => { messageApi.success('คัดลอกข้อความแจ้งส่งของแล้ว!'); });
+        let text = "";
+        if (selectedOrder.deliveryMethod === 'PICKUP') {
+            text = `ออเดอร์ #${selectedOrder.id} เตรียมสินค้าเรียบร้อย!\n\n🛍️ วิธีรับสินค้า: มารับเองที่ร้าน\n✅ ลูกค้าสามารถเข้ามารับสินค้าได้เลยครับ\n\nขอบคุณที่อุดหนุนร้านเรานะครับ โอกาสหน้าเชิญใหม่ครับ 🙏😊`;
+        } else {
+            const trackingText = trackingNumber ? trackingNumber : "(รอแจ้งเลขพัสดุ)";
+            text = `ออเดอร์ #${selectedOrder.id} จัดส่งเรียบร้อยครับ!\n\n🚚 ขนส่ง: ${courier}\n📦 เลขพัสดุ: ${trackingText}\n\nขอบคุณที่อุดหนุนร้านเรานะครับ โอกาสหน้าเชิญใหม่ครับ 🙏😊`;
+        }
+        navigator.clipboard.writeText(text).then(() => { messageApi.success('คัดลอกข้อความแจ้งส่งของ/รับของแล้ว!'); });
     };
 
     const confirmStatusChange = (id: string, newStatus: OrderStatus) => {
@@ -462,7 +477,14 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                             </div>
 
                             {/* Tracking */}
-                            {receiptOrder.trackingNumber && (
+                            {receiptOrder.deliveryMethod === 'PICKUP' ? (
+                                <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3 text-xs flex items-center gap-2">
+                                    <span className="text-cyan-500 text-base">🛍️</span>
+                                    <div>
+                                        <div className="text-cyan-700 font-semibold">วิธีรับสินค้า: มารับเองที่ร้าน</div>
+                                    </div>
+                                </div>
+                            ) : receiptOrder.trackingNumber && (
                                 <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs flex items-center gap-2">
                                     <span className="text-purple-500 text-base">🚚</span>
                                     <div>
@@ -582,6 +604,11 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                                 <div className="flex items-center gap-2">
                                                     <span className={`font-bold ${statusInfo.text}`}>{order.id}</span>
                                                     <Tag color={statusInfo.color} className="rounded-full border-0">{statusInfo.label}</Tag>
+                                                    {order.deliveryMethod === 'PICKUP' ? (
+                                                        <Tag color="cyan" className="rounded-full border-0 m-0">🛍️ รับเอง</Tag>
+                                                    ) : (
+                                                        <Tag color="blue" className="rounded-full border-0 m-0">🚚 จัดส่ง</Tag>
+                                                    )}
                                                 </div>
                                                 <div className="text-[10px] text-gray-500 mt-1 flex items-center gap-1 opacity-80"><Calendar size={10} /> {dayjs(order.timestamp).format('DD/MM/YYYY HH:mm')}</div>
                                             </div>
@@ -610,7 +637,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                                 </div>
                                             </div>
 
-                                            {order.trackingNumber && (
+                                            {order.deliveryMethod !== 'PICKUP' && order.trackingNumber && (
                                                 <div className="mt-3 ml-6 text-xs text-purple-700 bg-purple-100 px-3 py-1.5 rounded-lg inline-flex items-center gap-2 font-medium">
                                                     <Truck size={14} /> {order.courier}: <span className="font-mono bg-white px-2 py-0.5 rounded text-purple-900 border border-purple-200">{order.trackingNumber}</span>
                                                 </div>
@@ -627,12 +654,12 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                             )}
 
                                             {order.status === 'PENDING' && <Button type="primary" size="small" className="bg-indigo-600" onClick={() => confirmStatusChange(order.id, 'CONFIRMED')}>ยืนยัน</Button>}
-                                            {order.status === 'CONFIRMED' && <Button type="primary" size="small" className="bg-purple-600" onClick={() => openShippingModal(order)}>แจ้งพัสดุ</Button>}
+                                            {order.status === 'CONFIRMED' && <Button type="primary" size="small" className="bg-purple-600" onClick={() => openShippingModal(order)}>{order.deliveryMethod === 'PICKUP' ? 'ลูกค้ารับของแล้ว' : 'แจ้งพัสดุ'}</Button>}
                                             {(order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && order.status !== 'SHIPPED') && (
                                                 <Button danger size="small" onClick={() => confirmStatusChange(order.id, 'CANCELLED')}>ยกเลิก</Button>
                                             )}
                                             {(order.status === 'SHIPPED' || order.status === 'COMPLETED') && (
-                                                <Button size="small" onClick={() => openShippingModal(order)}>ดู/แก้ไขพัสดุ</Button>
+                                                <Button size="small" onClick={() => openShippingModal(order)}>{order.deliveryMethod === 'PICKUP' ? 'ดูสถานะรับของ' : 'ดู/แก้ไขพัสดุ'}</Button>
                                             )}
                                             {order.status === 'CANCELLED' && (
                                                 <Tooltip title="ลบออเดอร์ถาวร">
@@ -681,13 +708,20 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                                 </td>
                                                 <td className="p-4 font-bold">฿{order.totalAmount.toLocaleString()}</td>
                                                 <td className="p-4">
-                                                    <Tag color={getStatusStyle(order.status).color}>{getStatusStyle(order.status).label}</Tag>
+                                                    <div className="flex gap-1 w-max">
+                                                        <Tag color={getStatusStyle(order.status).color}>{getStatusStyle(order.status).label}</Tag>
+                                                        {order.deliveryMethod === 'PICKUP' ? (
+                                                            <Tag color="cyan">🛍️ รับเอง</Tag>
+                                                        ) : (
+                                                            <Tag color="blue">🚚 จัดส่ง</Tag>
+                                                        )}
+                                                    </div>
                                                     {order.managedBy && (
                                                         <div className="text-[10px] mt-1.5 text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 w-fit inline-flex items-center gap-1 shadow-sm font-medium">
                                                             👤 {order.managedBy}
                                                         </div>
                                                     )}
-                                                    {order.trackingNumber && (
+                                                    {order.deliveryMethod !== 'PICKUP' && order.trackingNumber && (
                                                         <div className="text-[10px] mt-2 text-gray-500 flex flex-col bg-gray-50 p-1.5 rounded border border-gray-100">
                                                             <span className="font-medium text-purple-700">{order.courier}</span>
                                                             <span className="font-mono text-gray-800">{order.trackingNumber}</span>
@@ -712,9 +746,9 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                                             </Tooltip>
                                                         )}
                                                         {order.status === 'CONFIRMED' && (
-                                                            <Tooltip title="แจ้งเลขพัสดุ / ส่งของ">
+                                                            <Tooltip title={order.deliveryMethod === 'PICKUP' ? 'ลูกค้ารับของแล้ว' : 'แจ้งเลขพัสดุ / ส่งของ'}>
                                                                 <Button type="primary" size="small" className="bg-purple-600 flex items-center gap-1" onClick={() => openShippingModal(order)}>
-                                                                    <Truck size={14} /> ส่งของ
+                                                                    {order.deliveryMethod === 'PICKUP' ? <CheckSquare size={14} /> : <Truck size={14} />} <span className="hidden sm:inline">{order.deliveryMethod === 'PICKUP' ? 'ลูกค้ารับของ' : 'ส่งของ'}</span>
                                                                 </Button>
                                                             </Tooltip>
                                                         )}
@@ -724,8 +758,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                                             </Tooltip>
                                                         )}
                                                         {(order.status === 'SHIPPED' || order.status === 'COMPLETED') && (
-                                                            <Tooltip title="แก้ไขเลขพัสดุ">
-                                                                <Button size="small" icon={<Truck size={14} />} onClick={() => openShippingModal(order)} />
+                                                            <Tooltip title={order.deliveryMethod === 'PICKUP' ? 'ดูข้อมูล' : 'แก้ไขเลขพัสดุ'}>
+                                                                <Button size="small" icon={order.deliveryMethod === 'PICKUP' ? <CheckSquare size={14} /> : <Truck size={14} />} onClick={() => openShippingModal(order)} />
                                                             </Tooltip>
                                                         )}
                                                         {order.status === 'CANCELLED' && (
@@ -974,27 +1008,37 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
 
             {/* --- MODAL: SHIPPING --- */}
             <Modal
-                title={<div className="flex items-center gap-2 font-bold"><Truck className="text-purple-600" /> แจ้งเลขพัสดุ</div>}
+                title={<div className="flex items-center gap-2 font-bold">{selectedOrder?.deliveryMethod === 'PICKUP' ? <><CheckSquare className="text-green-600" /> ยืนยันลูกค้ามารับสินค้า</> : <><Truck className="text-purple-600" /> แจ้งเลขพัสดุ</>}</div>}
                 open={isShippingModalOpen}
                 onOk={handleConfirmShippingInfo}
                 onCancel={() => setIsShippingModalOpen(false)}
                 centered
-                okText="ยืนยันบันทึกพัสดุ"
+                okText={selectedOrder?.deliveryMethod === 'PICKUP' ? 'ยืนยันลูกค้ารับของ' : 'ยืนยันบันทึกพัสดุ'}
                 cancelText="ยกเลิก"
-                okButtonProps={{ className: 'bg-purple-600 hover:bg-purple-700' }}
+                okButtonProps={{ className: selectedOrder?.deliveryMethod === 'PICKUP' ? 'bg-green-600 hover:bg-green-700' : 'bg-purple-600 hover:bg-purple-700' }}
             >
                 <div className="pt-4 space-y-4 pb-2">
-                    <div>
-                        <label className="text-sm font-semibold text-gray-700">บริษัทขนส่ง</label>
-                        <Select value={courier} onChange={setCourier} style={{ width: '100%' }} size="large" options={[{ value: 'Kerry Express', label: 'Kerry Express' }, { value: 'Flash Express', label: 'Flash Express' }, { value: 'Thailand Post', label: 'ไปรษณีย์ไทย' }, { value: 'J&T Express', label: 'J&T Express' }]} />
-                    </div>
-                    <div>
-                        <label className="text-sm font-semibold text-gray-700">Tracking Number</label>
-                        <Input placeholder="กรอกเลขพัสดุ..." value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} size="large" prefix={<Package className="text-gray-400" size={16} />} />
-                    </div>
+                    {selectedOrder?.deliveryMethod === 'PICKUP' ? (
+                        <div className="bg-green-50 p-4 rounded-xl border border-green-200 text-center">
+                            <Package className="mx-auto text-green-500 mb-2" size={32} />
+                            <h3 className="text-green-800 font-bold mb-1">ลูกค้ารับสินค้าที่ร้าน</h3>
+                            <p className="text-green-600 text-sm">ไม่ต้องกรอกเลขพัสดุ กดปุ่มยืนยันลูกค้ารับของได้เลย</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="text-sm font-semibold text-gray-700">บริษัทขนส่ง</label>
+                                <Select value={courier} onChange={setCourier} style={{ width: '100%' }} size="large" options={[{ value: 'Kerry Express', label: 'Kerry Express' }, { value: 'Flash Express', label: 'Flash Express' }, { value: 'Thailand Post', label: 'ไปรษณีย์ไทย' }, { value: 'J&T Express', label: 'J&T Express' }]} />
+                            </div>
+                            <div>
+                                <label className="text-sm font-semibold text-gray-700">Tracking Number</label>
+                                <Input placeholder="กรอกเลขพัสดุ..." value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} size="large" prefix={<Package className="text-gray-400" size={16} />} />
+                            </div>
+                        </>
+                    )}
                     <div className="pt-2">
                         <Button block size="large" icon={<Copy size={16} />} onClick={handleCopyShippingText} className="bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200 flex items-center justify-center gap-2">
-                            คัดลอกข้อความแจ้งลูกค้า
+                            {selectedOrder?.deliveryMethod === 'PICKUP' ? 'คัดลอกข้อความแจ้งสินค้าพร้อมรับ' : 'คัดลอกข้อความแจ้งลูกค้า'}
                         </Button>
                         <p className="text-xs text-gray-400 text-center mt-2">อย่าลืมกดคัดลอกข้อความส่งให้ลูกค้าก่อนนะครับ</p>
                     </div>
