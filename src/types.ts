@@ -64,6 +64,7 @@ export interface Order {
   timestamp: string;
   trackingNumber?: string;
   courier?: string;
+  shippingCost?: number; // ค่าจัดส่งที่ระบุโดยแอดมิน
   refundAmount?: number; // ยอดที่คืนลูกค้า
   netAmount?: number;    // ยอดสุทธิหลังหักคืน (totalAmount - refundAmount)
   notes?: string;

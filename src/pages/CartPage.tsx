@@ -220,7 +220,12 @@ const CartPage: React.FC<CartPageProps> = ({ cart, cartTotal, updateCartQty, onP
         <div className="max-w-md mx-auto">
           <div className="flex justify-between items-end mb-4 px-2">
             <div className="text-slate-500 font-medium">ยอดรวมทั้งหมด</div>
-            <div className="text-2xl font-black text-orange-600">฿{cartTotal.toLocaleString()}</div>
+            <div className="text-right">
+              <div className="text-2xl font-black text-orange-600">฿{cartTotal.toLocaleString()}</div>
+              {formData.deliveryMethod === 'DELIVERY' && (
+                <div className="text-[10px] text-red-500 font-medium mt-1">📌 ค่าขนส่งจ่ายตามจริงปลายทาง</div>
+              )}
+            </div>
           </div>
           <button
             type="submit"

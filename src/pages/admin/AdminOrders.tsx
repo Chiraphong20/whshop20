@@ -16,7 +16,7 @@ interface AdminOrdersProps {
     orders: Order[];
     products: Product[]; // ✅ สำหรับเลือกสินค้าตอนสร้างออเดอร์
     onUpdateStatus: (id: string, status: OrderStatus, managedBy?: string) => void;
-    onUpdateShipping?: (id: string, trackingNumber: string, courier: string) => void;
+    onUpdateShipping?: (id: string, trackingNumber: string, courier: string, shippingCost?: number) => void;
     onAddOrder?: (order: Partial<Order>) => void; // ✅ ฟังก์ชันสร้างออเดอร์
     onUpdateOrderDetails?: (id: string, items: any[], newTotal: number) => void;
     onDeleteOrder?: (id: string) => void;
@@ -36,6 +36,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [courier, setCourier] = useState('Kerry Express');
     const [trackingNumber, setTrackingNumber] = useState('');
+    const [shippingCost, setShippingCost] = useState<number | undefined>(undefined);
 
     const [isPickingModalOpen, setIsPickingModalOpen] = useState(false);
     const [pickingOrder, setPickingOrder] = useState<Order | null>(null);
@@ -139,6 +140,10 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
             financialSummary = `------------------\n💰 ยอดเดิม: ${order.totalAmount.toLocaleString()} บาท\n💸 หักสินค้าที่ไม่มี: -${refundAmount.toLocaleString()} บาท\n✅ ยอดสุทธิที่ต้องโอน: ${netTotal.toLocaleString()} บาท`;
         } else {
             financialSummary = `------------------\n💰 ยอดรวมทั้งสิ้น: ${order.totalAmount.toLocaleString()} บาท`;
+        }
+
+        if (order.deliveryMethod !== 'PICKUP') {
+            financialSummary += ' (ยอดรวมนี้ยังไม่รวมค่าจัดส่ง)';
         }
 
         let paymentInfo = "";
@@ -254,6 +259,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
         setSelectedOrder(order);
         setCourier(order.courier || 'Kerry Express');
         setTrackingNumber(order.trackingNumber || '');
+        setShippingCost(order.shippingCost);
         setIsShippingModalOpen(true);
     };
 
@@ -264,7 +270,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                 setIsShippingModalOpen(false);
                 messageApi.success(`เสร็จสิ้นออเดอร์ (ลูกค้ารับเองที่ร้าน)`);
             } else if (trackingNumber) {
-                if (onUpdateShipping) onUpdateShipping(selectedOrder.id, trackingNumber, courier);
+                if (onUpdateShipping) onUpdateShipping(selectedOrder.id, trackingNumber, courier, shippingCost);
                 // ✅ เปลี่ยนจาก SHIPPED เป็น COMPLETED ตามที่ต้องการ
                 onUpdateStatus(selectedOrder.id, 'COMPLETED');
                 setIsShippingModalOpen(false);
@@ -475,6 +481,13 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                 <span className="text-gray-600 font-semibold">ยอดรวมทั้งสิ้น</span>
                                 <span className="text-xl font-bold text-indigo-600">฿{receiptOrder.totalAmount.toLocaleString()}</span>
                             </div>
+
+                            {receiptOrder.deliveryMethod !== 'PICKUP' && (
+                                <div className="flex justify-between items-center pb-2 text-sm text-gray-500">
+                                    <span>ค่าจัดส่ง</span>
+                                    <span>{receiptOrder.shippingCost !== undefined ? `฿${receiptOrder.shippingCost.toLocaleString()}` : 'จ่ายตามจริงปลายทาง'}</span>
+                                </div>
+                            )}
 
                             {/* Tracking */}
                             {receiptOrder.deliveryMethod === 'PICKUP' ? (
@@ -1033,6 +1046,11 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                             <div>
                                 <label className="text-sm font-semibold text-gray-700">Tracking Number</label>
                                 <Input placeholder="กรอกเลขพัสดุ..." value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} size="large" prefix={<Package className="text-gray-400" size={16} />} />
+                            </div>
+                            <div>
+                                <label className="text-sm font-semibold text-gray-700">ค่าจัดส่ง (ถ้ามี)</label>
+                                <Input type="number" placeholder="ค่าจัดส่ง..." value={shippingCost === undefined ? '' : shippingCost} 
+                                    onChange={(e) => setShippingCost(e.target.value ? Number(e.target.value) : undefined)} size="large" prefix="฿" />
                             </div>
                         </>
                     )}

@@ -291,15 +291,15 @@ const App: React.FC = () => {
     } catch (error) { message.error('ล้มเหลว'); }
   };
 
-  const handleUpdateShipping = async (id: string, trackingNumber: string, courier: string) => {
+  const handleUpdateShipping = async (id: string, trackingNumber: string, courier: string, shippingCost?: number) => {
     try {
       const res = await fetch(`${API_URL}/api/orders/${id}/shipping`, {
         method: 'PUT',
         headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ trackingNumber, courier, status: 'COMPLETED' })
+        body: JSON.stringify({ trackingNumber, courier, status: 'COMPLETED', shippingCost })
       });
       if (res.ok) {
-        setOrders(prev => prev.map(o => o.id === id ? { ...o, trackingNumber, courier, status: 'COMPLETED' } : o));
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, trackingNumber, courier, status: 'COMPLETED', shippingCost } : o));
         message.success('บันทึกขนส่งแล้ว');
       }
     } catch (error) { console.error(error); }
