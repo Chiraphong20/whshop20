@@ -135,8 +135,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
                           <span className="text-green-700 font-extrabold text-sm sm:text-base">
                             {product.wholesalePrice.toLocaleString()} บาท
                           </span>
-                          <span className="text-green-700 text-xs font-bold font-sans">
-                            {product.minWholesaleQty}{product.unit || 'ชิ้น'} / แพ็ค
+                          <span className="text-green-700 text-[11px] font-bold font-sans">
+                            {product.minWholesaleQty} {product.unit || 'ชิ้น'} / แพ็ค
                           </span>
                         </>
                       ) : (
@@ -144,8 +144,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
                           <span className="text-green-700 font-extrabold text-sm sm:text-base">
                             {product.wholesalePrice.toLocaleString()} บาท
                           </span>
-                          <span className="text-green-700 text-[10px] font-bold font-sans">
-                            / {product.unit || 'ชิ้น'} (ขั้นต่ำ {product.minWholesaleQty} ชิ้น)
+                          <span className="text-green-700 text-[11px] font-bold font-sans">
+                            {product.minWholesaleQty} {product.unit || 'ชิ้น'}ขึ้นไป
                           </span>
                         </>
                       )}
@@ -160,7 +160,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
                     }}
                     className="flex-shrink-0 bg-green-600 text-white text-[10px] font-bold px-2 py-1.5 rounded-md flex items-center justify-center shadow-md active:scale-90 transition-transform hover:bg-green-700"
                   >
-                    + {product.minWholesaleQty} ชิ้น
+                    + {product.minWholesaleQty} {product.unit || 'ชิ้น'}
                   </button>
                 </div>
 
@@ -169,15 +169,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
                   <div className="flex-1 min-w-0 pr-1 leading-tight">
                     <div className="flex items-baseline gap-1">
                       <span className="text-orange-600 font-extrabold text-base sm:text-lg">
-                        ฿{product.retailPrice.toLocaleString()}
+                        {product.retailPrice.toLocaleString()} บาท
                       </span>
-                      <span className="text-slate-400 text-[10px]">/{product.unit || 'ชิ้น'}</span>
+                      <span className="text-slate-500 font-bold text-[10px] font-sans">
+                        {(product.unitQty ?? 1) > 1 ? `${product.unitQty} ชิ้น / ${product.unit || 'แพ็ค'}` : `/ ${product.unit || 'ชิ้น'}`}
+                      </span>
                     </div>
-                    {(product.unitQty ?? 1) > 1 && (
-                      <div className="text-[9px] text-blue-600 bg-blue-50 font-medium px-1 py-0.5 rounded mt-0.5 inline-block">
-                        📦 1 {product.unit} = {product.unitQty}ชิ้น
-                      </div>
-                    )}
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
@@ -192,16 +189,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
               /* กรณีมีราคาเดียว (แสดงแบบเดิมๆ) */
               <div className="flex justify-between items-end mt-1">
                 <div className="min-w-0 flex-1 pr-1">
-                  {(product.unitQty ?? 1) > 1 && (
-                    <div className="text-[9px] text-blue-600 bg-blue-50 font-medium px-1 py-0.5 rounded mb-1 inline-block leading-tight">
-                      📦 1 {product.unit} = {product.unitQty}ชิ้น
-                    </div>
-                  )}
-                  <div className="flex items-baseline gap-0.5 flex-wrap">
+                  <div className="flex items-baseline gap-1 flex-wrap">
                     <span className="text-orange-600 font-extrabold text-base sm:text-lg leading-none">
-                      ฿{product.retailPrice > 0 ? product.retailPrice.toLocaleString() : product.wholesalePrice.toLocaleString()}
+                      {product.retailPrice > 0 ? product.retailPrice.toLocaleString() : product.wholesalePrice.toLocaleString()} บาท
                     </span>
-                    <span className="text-slate-400 text-[10px]">/{product.unit || 'ชิ้น'}</span>
+                    <span className="text-slate-500 font-bold text-[11px] font-sans">
+                        {(product.unitQty ?? 1) > 1 ? `${product.unitQty} ชิ้น / ${product.unit || 'แพ็ค'}` : `/ ${product.unit || 'ชิ้น'}`}
+                    </span>
                   </div>
                 </div>
                 <button

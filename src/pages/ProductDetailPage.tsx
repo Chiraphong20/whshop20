@@ -84,40 +84,36 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ products, addToCa
                 <div className="text-orange-500 font-bold text-xs sm:text-sm mb-1">{product.category}</div>
                 <h1 className="text-xl sm:text-2xl font-black text-slate-800 mb-2 leading-tight">{product.name}</h1>
 
-                <div className="flex flex-wrap items-end gap-3 mb-4 pb-4 border-b border-slate-100">
+                <div className="flex flex-col gap-3 mb-4 pb-4 border-b border-slate-100">
                     {/* ราคา 1 - Highlight ใหญ่โต */}
-                    <div>
-                        {/* Pack size info */}
-                        {(product.unitQty ?? 1) > 1 && (
-                            <div className="mb-1 inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-100 text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-1 rounded-full">
-                                📦 1 {product.unit} = {product.unitQty} ชิ้น
-                            </div>
-                        )}
-                        <div className="flex items-baseline gap-1">
+                    <div className="w-full">
+                        <div className="flex items-baseline gap-2 flex-wrap">
                             <span className="text-3xl sm:text-4xl font-black text-orange-600">
-                                ฿{product.retailPrice > 0 ? product.retailPrice.toLocaleString() : product.wholesalePrice.toLocaleString()}
+                                {product.retailPrice > 0 ? product.retailPrice.toLocaleString() : product.wholesalePrice.toLocaleString()} บาท
                             </span>
-                            <span className="text-slate-400 text-sm">/ {product.unit || 'ชิ้น'}</span>
+                            <span className="text-slate-500 font-bold text-sm sm:text-base font-sans mt-1">
+                                {(product.unitQty ?? 1) > 1 ? `${product.unitQty} ชิ้น / ${product.unit || 'แพ็ค'}` : `/ ${product.unit || 'ชิ้น'}`}
+                            </span>
                         </div>
                         {/* เงื่อนไขราคา 1 (เมื่อมีราคา 2 ด้วย) */}
-                        {product.retailPrice > 0 && product.wholesalePrice > 0 && (
-                            <div className="text-[10px] text-slate-400 mt-0.5">
+                        {product.retailPrice > 0 && product.wholesalePrice > 0 && product.minWholesaleQty > 1 && (
+                            <div className="text-xs text-slate-400 mt-1.5 font-medium">
                                 (สั่ง 1–{product.minWholesaleQty - 1} {product.unit})
                             </div>
                         )}
                     </div>
                     {/* ราคา 2 - Strong badge */}
-                    {product.retailPrice >= 20 && product.wholesalePrice > 0 && (
-                        <div className="bg-green-50 border border-green-200 text-green-800 px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1 flex-wrap">
+                    {product.retailPrice >= 20 && product.wholesalePrice > 0 && product.minWholesaleQty > 1 && (
+                        <div className="bg-green-50 border border-green-200 text-green-800 px-3 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 flex-wrap w-fit">
                             <span>🏷️</span>
-                            <span>ส่ง <strong>{product.wholesalePrice.toLocaleString()} บาท</strong></span>
+                            <span>ราคาส่ง <strong>{product.wholesalePrice.toLocaleString()} บาท</strong></span>
                             {product.wholesalePrice > product.retailPrice ? (
-                                <span className="text-[10px] text-green-600 font-normal">
-                                    ({product.minWholesaleQty}{product.unit || 'ชิ้น'} / แพ็ค)
+                                <span className="text-xs text-green-700 font-medium bg-white px-2 py-0.5 rounded-full shadow-sm border border-green-100">
+                                    {product.minWholesaleQty} {product.unit || 'ชิ้น'} / แพ็ค
                                 </span>
                             ) : (
-                                <span className="text-[10px] text-green-600 font-normal">
-                                    / {product.unit || 'ชิ้น'} (ขั้นต่ำ {product.minWholesaleQty} ชิ้น)
+                                <span className="text-xs text-green-700 font-medium bg-white px-2 py-0.5 rounded-full shadow-sm border border-green-100">
+                                    {product.minWholesaleQty} {product.unit || 'ชิ้น'}ขึ้นไป
                                 </span>
                             )}
                         </div>
@@ -133,8 +129,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ products, addToCa
                                     <span className="text-base">📦</span>
                                     <span className="text-xs font-bold text-orange-700 uppercase tracking-wide">ราคาส่ง</span>
                                 </div>
-                                <p className="text-sm font-bold text-slate-800">
-                                    สั่ง <span className="text-orange-600">{product.minWholesaleQty} {product.unit || 'ชิ้น'}</span> ขึ้นไป
+                                <p className="text-sm font-bold text-slate-800 mb-0.5 mt-0.5">
+                                    {product.wholesalePrice > (product.retailPrice ?? 0) ? (
+                                      <>สั่ง <span className="text-orange-600">{product.minWholesaleQty} {product.unit || 'ชิ้น'} / แพ็ค</span></>
+                                    ) : (
+                                      <>สั่ง <span className="text-orange-600">{product.minWholesaleQty} {product.unit || 'ชิ้น'}</span> ขึ้นไป</>
+                                    )}
                                 </p>
                                 <div className="flex items-baseline gap-2 mt-0.5">
                                     <span className="text-xl font-black text-orange-700">{product.wholesalePrice} บาท</span>
