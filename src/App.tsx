@@ -58,11 +58,40 @@ const App: React.FC = () => {
   // =========================================================
   // 🔊 ระบบแจ้งเตือนเสียง
   // =========================================================
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio('/order_notification.mp3');
+    
+    // ปลดล็อกการเล่นเสียงเมื่อผู้ใช้กดคลิกหรือแตะหน้าจอครั้งแรก
+    const unlockAudio = () => {
+      if (audioRef.current) {
+        audioRef.current.play().then(() => {
+          audioRef.current!.pause();
+          audioRef.current!.currentTime = 0;
+        }).catch(() => {});
+      }
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+    };
+  }, []);
+
   const playNotificationSound = () => {
-    const audio = new Audio('/order_notification.mp3');
-    audio.play().catch((err) => {
-      console.log("Audio play blocked by browser", err);
-    });
+    if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch((err) => {
+            console.log("Audio play blocked by browser", err);
+            message.info("เบราว์เซอร์บล็อกเสียง รบกวนคลิกที่หน้าจอหนึ่งครั้งเพื่ออนุญาตให้เสียงแจ้งเตือนทำงานครับ");
+        });
+    }
   };
 
   // =========================================================

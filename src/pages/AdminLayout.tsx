@@ -16,47 +16,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ orders }) => {
   const [api, contextHolder] = notification.useNotification();
   // ใช้ State เพื่อควบคุมการเปิด/ปิด Sidebar บนมือถือ
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  // ใช้ useRef เก็บจำนวนออเดอร์ล่าสุด เพื่อเปรียบเทียบ
+  // ใช้ state เพื่อเช็คว่าพนักงานกดเริ่มงานหรือยัง (เพื่อแก้ปัญหาเว็บ Browser ปิดเสียงอัตโนมัติ)
+  const [isAudioUnlocked, setIsAudioUnlocked] = useState(false);
   const prevOrderCountRef = useRef(orders.length);
 
-  useEffect(() => {
-    // ตรวจสอบว่ามีออเดอร์เพิ่มขึ้นจริง และไม่ใช่การโหลดหน้าเว็บครั้งแรก
-    if (orders.length > prevOrderCountRef.current && prevOrderCountRef.current !== 0) {
-      const newOrdersCount = orders.length - prevOrderCountRef.current;
-      const latestOrder = orders[orders.length - 1];
-
-      // 1. 🔔 เล่นเสียงแจ้งเตือน (พร้อมดัก Error)
-      const playNotificationSound = () => {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a');
-        audio.volume = 0.5;
-        audio.play().catch(() => {
-          // ถ้าเล่นไม่ได้ (เพราะ User ยังไม่เคยคลิกหน้าเว็บ) ให้ข้ามไปเงียบๆ ไม่ต้องแสดง Error แดง
-          console.log("📢 ระบบเสียงจะทำงานหลังจากคุณคลิกที่หน้าเว็บอย่างน้อย 1 ครั้งครับ");
-        });
-      };
-
-      playNotificationSound();
-
-      // 2. 📱 เด้ง Popup แจ้งเตือน (เปลี่ยนจาก message เป็น title ตามคำแนะนำของ AntD)
-      api.open({
-        message: ( // ถ้าใช้ AntD 5.x บาง Sub-version อาจยังใช้ message เป็นหัวข้อ แต่ถ้ามันแจ้งเตือนให้ใช้ title ให้ลองเปลี่ยนดูครับ
-          <div className="flex items-center gap-2 text-green-700 font-bold">
-            <BellRing size={18} className="animate-bounce" />
-            มีออเดอร์ใหม่เข้า {newOrdersCount} รายการ!
-          </div>
-        ),
-        description: `ลูกค้า: ${latestOrder?.customerName || 'ลูกค้าใหม่'} (ยอดรวม ฿${latestOrder?.totalAmount.toLocaleString()})`,
-        placement: 'topRight',
-        duration: 8,
-        className: 'bg-green-50 border-l-4 border-green-500 shadow-lg cursor-pointer',
-        onClick: () => navigate('/admin/orders')
-      });
-    }
-
-    // อัปเดตค่าล่าสุดเสมอ
-    prevOrderCountRef.current = orders.length;
-  }, [orders, api, navigate]);
   // ---------------------------------------------
+  // อัปเดตค่าล่าสุดเสมอเพื่อใช้ใช้อ้างอิงการเปลี่ยน state
+  useEffect(() => {
+    prevOrderCountRef.current = orders.length;
+  }, [orders]);
+  // ---------------------------------------------
+
 
   const userStr = localStorage.getItem('admin_user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -87,6 +57,32 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ orders }) => {
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans max-w-[100vw] overflow-hidden">
       {contextHolder} {/* ตัวแสดง Notification */}
+
+      {/* 🛑 Overlay แจ้งเตือนเพื่อให้ผู้ใช้ Click (แก้ปัญหา Autoplay Browser) */}
+      {!isAudioUnlocked && (
+        <div className="fixed inset-0 z-[9999] bg-slate-900/90 flex flex-col items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-6 animate-in zoom-in duration-300">
+            <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto text-orange-500 mb-4 shadow-inner">
+              <BellRing size={48} className="animate-bounce" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800">ระบบพร้อมรับออเดอร์</h2>
+              <p className="text-slate-500 mt-2 leading-relaxed">เพื่อเปิดการทำงานของ <b className="text-slate-700">เสียงแจ้งเตือนอัตโนมัติ</b> ให้ข้ามข้อจำกัดของเบราว์เซอร์ กรุณากดปุ่มด้านล่างเพื่อเริ่มทำงานครับ</p>
+            </div>
+            <button 
+              onClick={() => {
+                const testAudio = new Audio('/order_notification.mp3');
+                testAudio.volume = 0; // silent
+                testAudio.play().then(() => testAudio.pause()).catch(()=>{});
+                setIsAudioUnlocked(true);
+              }}
+              className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-6 py-4 rounded-xl text-lg font-bold shadow-xl shadow-orange-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              🚀 เริ่มทำงานรับออเดอร์
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 📱 Mobile Header (แสดงเฉพาะบนมือถือ) */}
       <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
