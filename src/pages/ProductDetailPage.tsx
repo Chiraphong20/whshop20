@@ -107,17 +107,25 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ products, addToCa
                         )}
                     </div>
                     {/* ราคา 2 - Strong badge */}
-                    {product.wholesalePrice > 20 && (
+                    {product.retailPrice >= 20 && product.wholesalePrice > 0 && (
                         <div className="bg-green-50 border border-green-200 text-green-800 px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1 flex-wrap">
                             <span>🏷️</span>
-                            <span>ส่ง <strong>฿{product.wholesalePrice.toLocaleString()}</strong></span>
-                            <span className="text-[10px] text-green-600 font-normal">(≥{product.minWholesaleQty} {product.unit})</span>
+                            <span>ส่ง <strong>{product.wholesalePrice.toLocaleString()} บาท</strong></span>
+                            {product.wholesalePrice > product.retailPrice ? (
+                                <span className="text-[10px] text-green-600 font-normal">
+                                    ({product.minWholesaleQty}{product.unit || 'ชิ้น'} / แพ็ค)
+                                </span>
+                            ) : (
+                                <span className="text-[10px] text-green-600 font-normal">
+                                    / {product.unit || 'ชิ้น'} (ขั้นต่ำ {product.minWholesaleQty} ชิ้น)
+                                </span>
+                            )}
                         </div>
                     )}
                 </div>
 
                 {/* 📦 ดีลราคาส่ง */}
-                {(product.wholesalePrice ?? 0) > 20 && (product.minWholesaleQty ?? 1) > 1 && (
+                {(product.retailPrice ?? 0) >= 20 && (product.wholesalePrice ?? 0) > 0 && (product.minWholesaleQty ?? 1) > 1 && (
                     <div className="mb-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 animate-in fade-in duration-300">
                         <div className="flex items-start justify-between gap-3">
                             <div>
@@ -129,8 +137,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ products, addToCa
                                     สั่ง <span className="text-orange-600">{product.minWholesaleQty} {product.unit || 'ชิ้น'}</span> ขึ้นไป
                                 </p>
                                 <div className="flex items-baseline gap-2 mt-0.5">
-                                    <span className="text-xl font-black text-orange-700">฿{product.wholesalePrice}</span>
-                                    <span className="text-xs text-slate-400">/ {product.unit}</span>
+                                    <span className="text-xl font-black text-orange-700">{product.wholesalePrice} บาท</span>
+                                    {product.wholesalePrice > (product.retailPrice ?? 0) ? (
+                                        <span className="text-xs text-slate-400">/ แพ็ค</span>
+                                    ) : (
+                                        <span className="text-xs text-slate-400">/ {product.unit || 'ชิ้น'}</span>
+                                    )}
                                     {(product.retailPrice ?? 0) > 0 && (
                                         <span className="text-[10px] text-slate-400 line-through">฿{product.retailPrice}</span>
                                     )}

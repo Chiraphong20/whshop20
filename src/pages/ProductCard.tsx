@@ -120,8 +120,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
             <h3 className="font-bold text-slate-800 text-xs sm:text-sm line-clamp-2 leading-tight mb-1.5">{product.name}</h3>
           </div>
         <div className="flex flex-col gap-2 mt-auto pt-2 border-t border-slate-100">
-            {/* กรณีมีทั้งราคาปลีกและส่ง (แสดง 2 ปุ่ม) และราคาส่งมากกว่า 20 บาท */}
-            {product.retailPrice > 0 && product.wholesalePrice > 20 && product.minWholesaleQty > 1 ? (
+            {/* กรณีมีทั้งราคาปลีกและส่ง (แสดง 2 ปุ่ม) และราคาปลีกตั้งแต่ 20 บาทขึ้นไป */}
+            {product.retailPrice >= 20 && product.wholesalePrice > 0 && product.minWholesaleQty > 1 ? (
               <>
                 {/* 🛒 ปุ่มซื้อปลีก */}
                 <div className="flex justify-between items-center bg-slate-50 p-1.5 rounded-lg border border-slate-100">
@@ -154,12 +154,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
                       <span className="bg-green-600 text-white px-1 py-0.5 rounded text-[8px] leading-none uppercase tracking-wider">ราคาส่ง</span>
                     </div>
                     <div className="flex items-baseline gap-1 mt-0.5">
-                      <span className="text-green-700 font-extrabold text-sm sm:text-base">
-                        {product.wholesalePrice.toLocaleString()} บาท
-                      </span>
-                      <span className="text-green-700 text-xs font-bold font-sans">
-                         {product.minWholesaleQty}{product.unit || 'ชิ้น'} / แพ็ค
-                      </span>
+                      {product.wholesalePrice > product.retailPrice ? (
+                        <>
+                          <span className="text-green-700 font-extrabold text-sm sm:text-base">
+                            {product.wholesalePrice.toLocaleString()} บาท
+                          </span>
+                          <span className="text-green-700 text-xs font-bold font-sans">
+                            {product.minWholesaleQty}{product.unit || 'ชิ้น'} / แพ็ค
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-green-700 font-extrabold text-sm sm:text-base">
+                            {product.wholesalePrice.toLocaleString()} บาท
+                          </span>
+                          <span className="text-green-700 text-[10px] font-bold font-sans">
+                            / {product.unit || 'ชิ้น'} (ขั้นต่ำ {product.minWholesaleQty} ชิ้น)
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <button
