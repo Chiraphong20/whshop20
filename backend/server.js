@@ -25,7 +25,11 @@ const middleware = line.middleware(lineConfig);
 // =========================================================
 // 🌐 API: Webhook สำหรับแจ้งเตือนและรับ Group ID ของ LINE Group
 // =========================================================
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning']
+}));
 
 // 🟢 Middleware ตัวนี้จะ parse body ของ API อื่นๆ
 app.use(express.json());

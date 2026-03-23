@@ -62,26 +62,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     audioRef.current = new Audio('/order_notification.mp3');
-    
-    // ปลดล็อกการเล่นเสียงเมื่อผู้ใช้กดคลิกหรือแตะหน้าจอครั้งแรก
-    const unlockAudio = () => {
-      if (audioRef.current) {
-        audioRef.current.play().then(() => {
-          audioRef.current!.pause();
-          audioRef.current!.currentTime = 0;
-        }).catch(() => {});
-      }
-      document.removeEventListener('click', unlockAudio);
-      document.removeEventListener('touchstart', unlockAudio);
-    };
-
-    document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('touchstart', unlockAudio, { once: true });
-
-    return () => {
-      document.removeEventListener('click', unlockAudio);
-      document.removeEventListener('touchstart', unlockAudio);
-    };
   }, []);
 
   const playNotificationSound = () => {
