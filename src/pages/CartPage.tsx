@@ -65,6 +65,22 @@ const CartPage: React.FC<CartPageProps> = ({ cart, cartTotal, updateCartQty, onP
         items: orderItems as any,
         deliveryMethod: formData.deliveryMethod
       });
+      
+      // ส่งข้อความไปหาแอดมิน (LINE OA) ในฐานะลูกค้า
+      try {
+        const liff = (await import('@line/liff')).default;
+        if (liff.isInClient() && liff.isLoggedIn()) {
+           await liff.sendMessages([
+             {
+               type: "text",
+               text: "รับออเดอร์ด้วยน้าา"
+             }
+           ]);
+        }
+      } catch (liffErr) {
+        console.error('Failed to send message via LIFF:', liffErr);
+      }
+
       clearCart();
       navigate('/success');
     } catch (err) {
