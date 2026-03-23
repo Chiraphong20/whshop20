@@ -81,7 +81,7 @@ const App: React.FC = () => {
     try {
       const resOrders = await fetch(`${API_URL}/api/orders`, {
         cache: 'no-store',
-        headers: getAuthHeaders({ 'Cache-Control': 'no-cache' })
+        headers: getAuthHeaders()
       });
 
       if (resOrders.ok) {

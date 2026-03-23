@@ -28,7 +28,7 @@ const middleware = line.middleware(lineConfig);
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning']
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'Cache-Control']
 }));
 
 // 🟢 Middleware ตัวนี้จะ parse body ของ API อื่นๆ
