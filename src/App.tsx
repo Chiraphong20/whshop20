@@ -221,25 +221,24 @@ const App: React.FC = () => {
       customerLinePictureUrl: customerLinePictureUrl || undefined,
     };
 
-    setOrders(prev => [newOrder as Order, ...prev]);
-    prevOrdersCount.current += 1;
+    // POST ไปยัง Backend ก่อน – ถ้าส่งไม่สำเร็จ throw error กลับไปที่ CartPage
+    const res = await fetch(`${API_URL}/api/orders`, {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(newOrder)
+    });
 
-    try {
-      const res = await fetch(`${API_URL}/api/orders`, {
-        method: 'POST',
-        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify(newOrder)
-      });
-      if (!res.ok) throw new Error("Sync failed");
-
-      // 🔄 รับ Order ID จริงที่ backend สร้างใหม่เอามาอัปเดต state กลับ
-      const data = await res.json();
-      if (data.id && data.id !== newOrder.id) {
-        setOrders(prev => prev.map(o => o.id === newOrder.id ? { ...o, id: data.id } : o));
-      }
-    } catch (error) {
-      console.error('Order Error:', error);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'ส่ง Order ไปยัง Server ไม่สำเร็จ');
     }
+
+    // 🔄 รับ Order ID จริงที่ backend สร้างใหม่เอามาอัปเดต state
+    const data = await res.json();
+    const savedOrder = { ...newOrder, id: data.id || newOrder.id } as Order;
+
+    setOrders(prev => [savedOrder, ...prev]);
+    prevOrdersCount.current += 1;
   };
 
   const handleUpdateOrderDetails = async (id: string, updatedItems: any[], newTotalAmount: number) => {

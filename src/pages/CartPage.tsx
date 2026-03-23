@@ -8,7 +8,7 @@ interface CartPageProps {
   cart: CartItem[];
   cartTotal: number;
   updateCartQty: (id: string, delta: number) => void;
-  onPlaceOrder: (order: Partial<Order>) => void;
+  onPlaceOrder: (order: Partial<Order>) => Promise<void> | void;
   clearCart: () => void;
 }
 
@@ -56,20 +56,23 @@ const CartPage: React.FC<CartPageProps> = ({ cart, cartTotal, updateCartQty, onP
       };
     });
 
-    onPlaceOrder({
-      customerName: formData.customerName,
-      customerContact: formData.customerContact,
-      address: formData.deliveryMethod === 'PICKUP' ? 'รับเองที่ร้าน' : formData.address,
-      totalAmount: cartTotal,
-      items: orderItems as any,
-      deliveryMethod: formData.deliveryMethod
-    });
-
-    setTimeout(() => {
+    try {
+      await onPlaceOrder({
+        customerName: formData.customerName,
+        customerContact: formData.customerContact,
+        address: formData.deliveryMethod === 'PICKUP' ? 'รับเองที่ร้าน' : formData.address,
+        totalAmount: cartTotal,
+        items: orderItems as any,
+        deliveryMethod: formData.deliveryMethod
+      });
       clearCart();
-      setIsSubmitting(false);
       navigate('/success');
-    }, 800);
+    } catch (err) {
+      console.error('Place order failed:', err);
+      message.error('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (cart.length === 0) {
