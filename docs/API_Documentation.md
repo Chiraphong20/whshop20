@@ -14,6 +14,7 @@
 | `POST` | `/api/admins` | สร้างแอดมินใหม่ (Super Admin) | `{ username, password, name, role, lineUserId }`| `{ success, message }` |
 | `DELETE`| `/api/admins/:id` | ลบแอดมิน (ลบ Super Admin ไม่ได้)| `Params: id` | `{ success, message }` |
 | `PATCH` | `/api/admins/:id` | ผูกบัญชี / อัปเดต LINE ID แอดมิน| `Params: id`, `{ lineUserId }` | `{ success, message }` |
+| `PATCH` | `/api/admins/:id/profile` | อัปเดตชื่อแสดงผลของแอดมิน | `Params: id`, `{ name }` | `{ success, message }` |
 | `POST` | `/api/admins/line-callback`| Callback สำหรับ LINE Login | `{ code, adminId }` | `{ success, lineUserId, displayName }` |
 
 ---
@@ -36,7 +37,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/api/orders` | ดึงข้อมูลคำสั่งซื้อทั้งหมด | - | `Array` ของคำสั่งซื้อ |
 | `GET` | `/api/orders/track` | ลูกค้าค้นหาออเดอร์ | `Query: lineUserId` หรือ `(orderId + contact)`| `{ success, orders }` |
-| `POST` | `/api/orders` | สร้างคำสั่งซื้อใหม่ & แจ้งเตือนผ่าน LINE| `{ customerName, customerContact, address, deliveryMethod, totalAmount, items, ... }` | `{ success, message, id }` |
+| `POST` | `/api/orders` | สร้างคำสั่งซื้อใหม่ & แจ้งเตือนผ่าน LINE| `{ customerName, customerContact, address, deliveryMethod ("DELIVERY"\|"PICKUP"), totalAmount, items, customerLineUserId?, customerLineDisplayName?, customerLinePictureUrl? }` | `{ success, message, id }` |
 | `PUT` | `/api/orders/:id/status` | อัปเดตสถานะ (หาก `CONFIRMED` สต๊อกจะลด)| `Params: id`, `{ status, managedBy }` | `{ success }` |
 | `PUT` | `/api/orders/:id` | อัปเดตรายการสินค้า/ยอดเงิน | `Params: id`, `{ items, totalAmount }` | `{ success }` |
 | `PUT` | `/api/orders/:id/shipping` | อัปเดตเลขพัสดุและบริษัทขนส่ง | `Params: id`, `{ trackingNumber, courier, status }`| `{ success }` |
@@ -74,3 +75,5 @@
 ---
 
 *หมายเหตุ: API ส่วนหน้าบ้านและหลังบ้านต่อกันผ่าน `VITE_API_URL` หรือกรณีรัน Local คือ `http://localhost:5000` (Backend) และ `http://localhost:5173` (Frontend)*
+
+*อัปเดตล่าสุด: 27 มีนาคม 2569 — เพิ่ม `PATCH /api/admins/:id/profile` และปรับปรุง `deliveryMethod` field ใน POST /api/orders*

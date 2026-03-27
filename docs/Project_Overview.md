@@ -162,10 +162,12 @@ LINE Commerce Pro
 | หน้าร้านค้า LINE LIFF | ครบทุกหน้า — หน้าแรก, สินค้า, รายละเอียด, ตะกร้า, โปรโมชั่น, ติดตามพัสดุ |
 | ระบบ Admin Dashboard | Dashboard, Orders, Products, Reports, Posts, Users, Settings, Profile |
 | Smart Order ID | สร้าง Order ID รูปแบบ `ORDDD-MM-SEQ` อัตโนมัติ ไม่ซ้ำต่อวัน |
-| โครงสร้างราคา 3 ระดับ | ปลีก / ส่ง (ตามจำนวน) / ยกลัง (Step Price) คำนวณอัตโนมัติ |
+| โครงสร้างราคา 3 ระดับ + Price Hint | ปลีก / ส่ง / ยกลัง คำนวณอัตโนมัติ พร้อมแสดง Hint "เพิ่มอีก X ชิ้น → ราคาส่ง" |
+| เลือกวิธีรับสินค้า (deliveryMethod) | ลูกค้าเลือก DELIVERY (จัดส่งถึงบ้าน) หรือ PICKUP (รับเองที่ร้าน) ที่อยู่แสดง/ซ่อนอัตโนมัติ |
 | LINE Messaging API | แจ้งเตือน Group Admin เมื่อมีออเดอร์, ส่งเลขพัสดุให้ลูกค้า |
+| LIFF Auto-message | เมื่อสั่งซื้อสำเร็จ ระบบส่งข้อความใน LINE แชทอัตโนมัติผ่าน `liff.sendMessages()` |
 | JWT Authentication | Login, ออก Token, เปลี่ยนรหัสผ่าน, Role-based Access |
-| โปรไฟล์ Admin | ดูข้อมูล, แก้ชื่อแสดงผล, เปลี่ยนรหัสผ่าน |
+| โปรไฟล์ Admin | ดูข้อมูล, แก้ชื่อแสดงผล (`PATCH /api/admins/:id/profile`), เปลี่ยนรหัสผ่าน |
 | Bulk Import | นำเข้าสินค้าจาก Excel หลายร้อยรายการพร้อมกัน |
 | Export รายงาน | Excel (.xlsx) และ PDF ทั้ง Report และใบสั่งซื้อ |
 | Responsive Design | ใช้งานได้ทั้งมือถือและ Desktop |
