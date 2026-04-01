@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ShoppingCart, Plus, ShoppingBag, Gift, Truck, HelpCircle } from 'lucide-react';
 import Header from '../components/Header';
 import { CATEGORIES } from '../constants';
-import { Product } from '../types';
+import { Product, Order } from '../types';
 
 interface ShopIndexPageProps {
   cartCount: number;
   products: Product[];
+  allOrders?: Order[];
   addToCart: (product: Product) => void;
   isLoading?: boolean; // ✅ เพิ่ม Prop สำหรับเช็คสถานะโหลดข้อมูล
 }
 
-const ShopIndexPage: React.FC<ShopIndexPageProps> = ({ cartCount, products, addToCart, isLoading = false }) => {
+const ShopIndexPage: React.FC<ShopIndexPageProps> = ({ cartCount, products, allOrders = [], addToCart, isLoading = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
 
@@ -21,6 +22,26 @@ const ShopIndexPage: React.FC<ShopIndexPageProps> = ({ cartCount, products, addT
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.category.includes(searchTerm)
   );
+
+  // 🏆 คำนวณสินค้าขายดี 10 อันดับแรก
+  const bestSellers = useMemo(() => {
+    const productSales: Record<string, number> = {};
+    if (allOrders.length > 0) {
+      allOrders.forEach(order => {
+        if (order.status === 'CANCELLED') return;
+        order.items.forEach(item => {
+          productSales[item.productId] = (productSales[item.productId] || 0) + (Number(item.quantity) || 0);
+        });
+      });
+    }
+    
+    // แนบยอดขายเข้ากับสินค้าและจัดเรียงลำดับ
+    return products
+      .map(p => ({ ...p, soldQty: productSales[p.id] || 0 }))
+      .sort((a, b) => (b.soldQty || 0) - (a.soldQty || 0))
+      .slice(0, 10)
+      .filter(p => p.soldQty && p.soldQty > 0); // แสดงเฉพาะตัวที่เคยขายได้
+  }, [products, allOrders]);
 
   // 🔄 Logic การจัดเรียงสินค้า
   filteredProducts = filteredProducts.sort((a, b) => {
@@ -154,20 +175,84 @@ const ShopIndexPage: React.FC<ShopIndexPageProps> = ({ cartCount, products, addT
             )}
           </div>
         ) : (
-          /* CASE 2: ยังไม่ค้นหา (แสดงหมวดหมู่เหมือนเดิม) */
-          <div className="grid grid-cols-2 gap-3 animate-in fade-in zoom-in duration-300">
-            {CATEGORIES.map((cat) => (
-              <Link
-                key={cat.name}
-                to={`/shop/${cat.name}`}
-                className={`aspect-[4/3] ${cat.color} bg-white border rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm transition-all active:scale-95 hover:shadow-md`}
-              >
-                <div className="p-2.5 bg-slate-50 rounded-full shadow-inner border border-slate-100 text-slate-700">
-                  {cat.icon}
+          /* CASE 2: ยังไม่ค้นหา (แสดงหมวดหมู่เหมือนเดิม และสินค้าขายดี) */
+          <div className="space-y-6 pb-6">
+            
+            {/* 🏆 สินค้าขายดี 10 อันดับแรก */}
+            {bestSellers.length > 0 && (
+              <div className="animate-in fade-in zoom-in duration-300">
+                <h2 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                  <span className="text-orange-500">🔥</span> สินค้าขายดี 10 อันดับแรก
+                </h2>
+                
+                <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 snap-x hide-scrollbar">
+                  {bestSellers.map((product, index) => (
+                    <div 
+                      key={product.id} 
+                      className="w-36 flex-shrink-0 snap-start bg-white rounded-xl p-2.5 shadow-sm border border-orange-100 flex flex-col relative"
+                      onClick={() => window.location.href = `/product/${product.id}`}
+                    >
+                      {/* Badge อันดับ */}
+                      <div className="absolute top-1 left-1 bg-gradient-to-br from-orange-400 to-red-500 text-white text-[10px] font-bold w-6 h-6 flex items-center justify-center rounded-full shadow-md z-10">
+                        #{index + 1}
+                      </div>
+                      
+                      <div className="w-full aspect-square bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden relative mb-2">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="absolute top-0 left-0 w-full h-[120%] object-cover object-top"
+                            onError={(e) => { e.currentTarget.src = 'https://placehold.co/400x400?text=No+Image'; }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No Image</div>
+                        )}
+                      </div>
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <h3 className="font-bold text-slate-800 text-sm line-clamp-2 leading-snug">{product.name}</h3>
+                          <p className="text-[10px] text-slate-400 mt-0.5">ขายแล้ว {product.soldQty} ชิ้น</p>
+                        </div>
+                        <div className="flex justify-between items-center mt-2 gap-1">
+                          <div className="text-orange-600 font-extrabold text-sm leading-none">
+                            ฿{product.retailPrice > 0 ? product.retailPrice.toLocaleString() : product.wholesalePrice.toLocaleString()}
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                            className="w-7 h-7 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center active:scale-90 transition-transform hover:bg-orange-200 flex-shrink-0"
+                          >
+                            <Plus size={16} strokeWidth={3} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <span className="font-bold text-slate-800 text-sm text-center px-1">{cat.name}</span>
-              </Link>
-            ))}
+              </div>
+            )}
+
+            {/* หมวดหมู่สินค้า */}
+            <div className="animate-in fade-in zoom-in duration-300">
+              <h2 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <ShoppingBag size={20} className="text-indigo-500" /> หมวดหมู่สินค้า
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {CATEGORIES.map((cat) => (
+                  <Link
+                    key={cat.name}
+                    to={`/shop/${cat.name}`}
+                    className={`aspect-[4/3] ${cat.color} bg-white border rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm transition-all active:scale-95 hover:shadow-md cursor-pointer`}
+                  >
+                    <div className="p-2.5 bg-slate-50 rounded-full shadow-inner border border-slate-100 text-slate-700">
+                      {cat.icon}
+                    </div>
+                    <span className="font-bold text-slate-800 text-sm text-center px-1">{cat.name}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
           </div>
         )}
 

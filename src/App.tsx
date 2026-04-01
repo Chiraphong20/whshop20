@@ -314,7 +314,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<ShopIndexPage cartCount={cartCount} products={products} addToCart={addToCart} />} />
+        <Route path="/" element={<ShopIndexPage cartCount={cartCount} products={products} allOrders={orders} addToCart={addToCart} />} />
         <Route path="/shop" element={<Navigate to="/" replace />} />
         <Route path="/shop/:categoryName" element={<ProductListPage addToCart={addToCart} cartCount={cartCount} />} />
         <Route path="/product/:id" element={<ProductDetailPage products={products} addToCart={addToCart} cartCount={cartCount} />} />

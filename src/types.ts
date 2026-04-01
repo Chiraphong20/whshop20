@@ -29,6 +29,7 @@ export interface Product {
   image: string;
   images?: string[];
   description?: string;
+  soldQty?: number;
 }
 
 export interface Post {
