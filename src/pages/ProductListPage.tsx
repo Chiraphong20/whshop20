@@ -3,16 +3,16 @@ import { useParams } from 'react-router-dom';
 import { Search, Loader2 } from 'lucide-react';
 import Header from '../components/Header';
 import ProductCard from '../pages/ProductCard';
-import { Product } from '../types';
+import { Product, Order } from '../types';
 import { API_URL, getAuthHeaders } from '../config';
 
 interface ProductListPageProps {
   addToCart: (p: Product) => void;
   cartCount: number;
-  // ❌ ลบ products และ isLoading ออกจาก Props เพราะเราจะดึงเอง
+  allOrders?: Order[];
 }
 
-const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount }) => {
+const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount, allOrders = [] }) => {
   const { categoryName } = useParams();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -44,11 +44,32 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount 
     fetchProducts();
   }, []);
 
-  // กรองเฉพาะหมวดหมู่ และค้นหาชื่อ
-  const filtered = products.filter((p) =>
-    p.category?.split('/').includes(decodedCategory) &&
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // กรองสินค้าตามหมวดหมู่ หรือคำนวณสินค้าขายดี
+  let filtered: Product[] = [];
+  if (decodedCategory === 'สินค้าขายดี') {
+    const productSales: Record<string, number> = {};
+    allOrders.forEach(order => {
+      if (order.status === 'CANCELLED') return;
+      order.items.forEach(item => {
+        productSales[item.productId] = (productSales[item.productId] || 0) + (Number(item.quantity) || 0);
+      });
+    });
+
+    filtered = products
+      .map(p => ({ ...p, soldQty: productSales[p.id] || 0 }))
+      .sort((a, b) => (b.soldQty || 0) - (a.soldQty || 0))
+      .filter(p => p.soldQty && p.soldQty > 0)
+      .slice(0, 10);
+
+    if (searchQuery) {
+      filtered = filtered.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+  } else {
+    filtered = products.filter((p) =>
+      p.category?.split('/').includes(decodedCategory) &&
+      p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
 
   return (
     <div className="h-screen bg-slate-100 flex flex-col">
