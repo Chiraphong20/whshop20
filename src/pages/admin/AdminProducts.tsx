@@ -560,6 +560,11 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
   const totalPages = Math.ceil(filteredProducts.length / pageSize);
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
+  const allCategories = Array.from(new Set([
+    ...categories.map(c => c.name),
+    ...(products.flatMap(p => (p.category || '').split('/'))).map(c => c.trim()).filter(Boolean)
+  ])).sort();
+
   return (
     <div className="h-full flex flex-col bg-slate-50">
       {/* --- Header Area --- */}
@@ -624,7 +629,9 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
               onChange={(e) => setFilterCategory(e.target.value)}
             >
               <option value="ทั้งหมด">หมวดหมู่ทั้งหมด</option>
-              {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+              {allCategories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
           </div>
@@ -979,14 +986,14 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
                         <div className="xl:col-span-1">
                           <label className="block text-sm font-bold text-slate-700 mb-1">หมวดหมู่ <span className="text-red-500">*</span></label>
                           <Select 
-                            mode="multiple"
+                            mode="tags"
                             allowClear
                             size="large"
-                            placeholder="เลือกหมวดหมู่ (ได้หลายอัน)"
+                            placeholder="เลือกหรือพิมพ์หมวดหมู่ (พิมพ์แล้ว Enter)"
                             className="w-full text-sm"
                             value={formData.category ? formData.category.split('/') : []} 
                             onChange={(val: string[]) => setFormData({ ...formData, category: val.join('/') })}
-                            options={categories.map(cat => ({ value: cat.name, label: cat.name }))}
+                            options={allCategories.map(cat => ({ value: cat, label: cat }))}
                           />
                         </div>
                         <div className="xl:col-span-3">
