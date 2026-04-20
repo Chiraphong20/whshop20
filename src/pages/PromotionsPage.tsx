@@ -101,6 +101,7 @@ const PromotionsPage: React.FC<PromotionsPageProps> = ({ cartCount }) => {
                       {/* 🌟 Crop ส่วนล่างทิ้งด้วย h-[120%] และ object-top เพื่อซ่อนราคาสินค้า */}
                       <img
                         src={p.image}
+                        loading="lazy"
                         className="absolute top-0 left-0 w-full h-[120%] object-cover object-top"
                         alt={p.name}
                         onError={(e) => { e.currentTarget.src = 'https://placehold.co/400x400?text=No+Image'; }}

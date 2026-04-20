@@ -118,6 +118,7 @@ const ShopIndexPage: React.FC<ShopIndexPageProps> = ({ cartCount, products, cate
                     {product.image ? (
                       <img
                         src={product.image}
+                        loading="lazy"
                         alt={product.name}
                         className="absolute top-0 left-0 w-full h-[120%] object-cover object-top"
                         onError={(e) => { e.currentTarget.src = 'https://placehold.co/400x400?text=No+Image'; }}

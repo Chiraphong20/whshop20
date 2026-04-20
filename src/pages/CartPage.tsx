@@ -134,6 +134,7 @@ const CartPage: React.FC<CartPageProps> = ({ cart, cartTotal, updateCartQty, onP
                   {item.image ? (
                     <img
                       src={item.image}
+                      loading="lazy"
                       className="absolute top-0 left-0 w-full h-[120%] object-cover object-top"
                       onError={(e) => { e.currentTarget.src = 'https://placehold.co/400x400?text=No+Image'; }}
                     />

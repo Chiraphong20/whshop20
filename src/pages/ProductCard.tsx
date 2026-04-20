@@ -89,6 +89,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
               {/* 🌟 Crop ส่วนล่างทิ้งด้วย h-[120%] และ object-top เพื่อซ่อนราคาสินค้า */}
               <img
                 src={product.image}
+                loading="lazy"
                 alt={product.name}
                 className="absolute top-0 left-0 w-full h-[120%] object-cover object-top transition-transform duration-500 group-hover:scale-110"
                 draggable="false"
@@ -243,6 +244,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, isNew, onAddToCart }
               <img
                 key={currentImageIndex}
                 src={allImages[currentImageIndex]}
+                loading="lazy"
                 alt={`${product.name} - ${currentImageIndex + 1}`}
                 className="w-full h-[120%] object-cover object-top animate-in fade-in zoom-in duration-300 pointer-events-none select-none"
                 draggable="false"

@@ -53,6 +53,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ products, addToCa
                         {/* 🌟 Crop ส่วนล่างทิ้งด้วย h-[120%] และ object-top เพื่อซ่อนราคาสินค้า */}
                         <img
                             src={allImages[currentImageIndex]}
+                            loading="lazy"
                             alt={product.name}
                             className="w-full h-[120%] object-cover object-top"
                             onError={(e) => { e.currentTarget.src = 'https://placehold.co/400x400?text=No+Image'; }}

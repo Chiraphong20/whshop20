@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import {
   Plus, Edit, Trash2, Search, X, Image as ImageIcon, Upload, Loader2,
   Package, DollarSign, Tag, ScanBarcode, FileSpreadsheet, Download,
-  LayoutGrid, List, Filter, Fingerprint
+  LayoutGrid, List, Filter, Fingerprint, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { message, Modal, Select } from 'antd';
 import { API_URL, getAuthHeaders } from '../../config';
@@ -89,6 +89,10 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const excelInputRef = useRef<HTMLInputElement>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 100;
+
   const [formData, setFormData] = useState<ProductWithGift>({
     id: '', barcode: '', name: '', category: categories.length > 0 ? categories[0].name : '',
     retailPrice: 0, wholesalePrice: 0, minWholesaleQty: 1, unitQty: 1,
@@ -99,6 +103,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
   // ล้างการเลือก Checkbox ทุกครั้งที่เปลี่ยนช่องค้นหาหรือเปลี่ยนหมวดหมู่
   useEffect(() => {
     setSelectedIds([]);
+    setCurrentPage(1);
   }, [searchTerm, filterCategory]);
 
   useEffect(() => {
@@ -552,6 +557,9 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
     }
   });
 
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  const paginatedProducts = filteredProducts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <div className="h-full flex flex-col bg-slate-50">
       {/* --- Header Area --- */}
@@ -696,7 +704,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {filteredProducts.map((product) => (
+                      {paginatedProducts.map((product) => (
                         <tr key={product.id} className={`hover:bg-slate-50 transition-colors group ${selectedIds.includes(product.id) ? 'bg-orange-50/30' : ''}`}>
                           {/* 🌟 Checkbox ในแต่ละแถว */}
                           <td className="py-2 px-4 text-center">
@@ -766,7 +774,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
 
             {viewMode === 'grid' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {filteredProducts.map((product) => {
+                {paginatedProducts.map((product) => {
                   const isSelected = selectedIds.includes(product.id);
                   return (
                     <div key={product.id} className={`bg-white rounded-xl shadow-sm border transition-shadow group flex flex-col h-full overflow-hidden ${isSelected ? 'border-orange-500 ring-2 ring-orange-100' : 'border-slate-200 hover:shadow-md'}`}>
@@ -832,6 +840,60 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
               </div>
             )}
           </>
+        )}
+
+        {/* Pagination Controls */}
+        {filteredProducts.length > 0 && totalPages > 1 && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between bg-white px-4 py-3 border border-slate-200 rounded-xl shadow-sm gap-4">
+            <div className="flex-1 w-full flex items-center justify-between sm:hidden">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                ก่อนหน้า
+              </button>
+              <span className="text-sm text-slate-700">หน้า {currentPage} จาก {totalPages}</span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                ถัดไป
+              </button>
+            </div>
+            
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-slate-700">
+                  แสดง <span className="font-medium">{((currentPage - 1) * pageSize) + 1}</span> ถึง <span className="font-medium">{Math.min(currentPage * pageSize, filteredProducts.length)}</span> จาก <span className="font-medium">{filteredProducts.length}</span> รายการ
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 transition-colors"
+                  >
+                    <span className="sr-only">หน้าก่อน</span>
+                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 border-y border-slate-300">
+                    หน้า {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 transition-colors"
+                  >
+                    <span className="sr-only">หน้าถัดไป</span>
+                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
