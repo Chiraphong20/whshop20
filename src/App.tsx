@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import liff from '@line/liff';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { notification, message } from 'antd';
-import { Product, Post, CartItem, Order, OrderStatus } from './types';
+import { Product, Post, CartItem, Order, OrderStatus, Category } from './types';
 import { POSTS } from './services/mockData';
 import { API_URL, getAuthHeaders } from './config';
 
@@ -30,9 +30,11 @@ import AdminReport from './pages/admin/AdminReport';
 import AdminSettings from './pages/admin/AdminSettings';
 import LineCallbackPage from './pages/admin/LineCallbackPage';
 import AdminProfile from './pages/admin/AdminProfile';
+import AdminCategories from './pages/admin/AdminCategories';
 
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [posts, setPosts] = useState<Post[]>(POSTS || []);
   const [orders, setOrders] = useState<Order[]>([]);
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -129,6 +131,21 @@ const App: React.FC = () => {
     }
   };
 
+  const fetchCategoriesData = async () => {
+    try {
+      const resCategories = await fetch(`${API_URL}/api/categories`, {
+        cache: 'no-store',
+        headers: getAuthHeaders()
+      });
+      if (resCategories.ok) {
+        const dataCategories = await resCategories.json();
+        setCategories(dataCategories);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
   // =========================================================
   // ⚡ Lifecycle & Polling (Fix Infinite Loop Here)
   // =========================================================
@@ -174,11 +191,13 @@ const App: React.FC = () => {
 
     setupLiff();
     fetchProductsData();
+    fetchCategoriesData();
     fetchOrders(true);
 
     const interval = setInterval(() => {
       fetchOrders();
       fetchProductsData();
+      fetchCategoriesData();
     }, 20000);
 
     return () => clearInterval(interval);
@@ -314,7 +333,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<ShopIndexPage cartCount={cartCount} products={products} allOrders={orders} addToCart={addToCart} />} />
+        <Route path="/" element={<ShopIndexPage cartCount={cartCount} products={products} categories={categories} allOrders={orders} addToCart={addToCart} isLoading={products.length === 0} />} />
         <Route path="/shop" element={<Navigate to="/" replace />} />
         <Route path="/shop/:categoryName" element={<ProductListPage addToCart={addToCart} cartCount={cartCount} allOrders={orders} />} />
         <Route path="/product/:id" element={<ProductDetailPage products={products} addToCart={addToCart} cartCount={cartCount} />} />
@@ -351,6 +370,7 @@ const App: React.FC = () => {
               />
             } />
             <Route path="posts" element={<AdminPosts posts={posts} products={products} onAdd={() => { }} onEdit={() => { }} onDelete={() => { }} />} />
+            <Route path="categories" element={<AdminCategories />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="reports" element={<AdminReport orders={orders} products={products} />} />

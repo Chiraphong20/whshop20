@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Package, ShoppingBag, FileText, LogOut, Store, LayoutDashboard, BellRing, Users, BarChart2, Menu, X, Settings, UserCircle } from 'lucide-react';
+import { Package, ShoppingBag, FileText, LogOut, Store, LayoutDashboard, BellRing, Users, BarChart2, Menu, X, Settings, UserCircle, LayoutGrid } from 'lucide-react';
 import { notification } from 'antd';
 import { Order } from '../types';
 
@@ -37,6 +37,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ orders }) => {
     { name: 'จัดการคำสั่งซื้อ', icon: <ShoppingBag size={20} />, path: '/admin/orders' },
     { name: 'รายงานยอดขาย', icon: <BarChart2 size={20} />, path: '/admin/reports' },
     { name: 'จัดการสินค้า', icon: <Package size={20} />, path: '/admin/products' },
+    { name: 'จัดการหมวดหมู่', icon: <LayoutGrid size={20} />, path: '/admin/categories' },
   ];
 
   if (isSuperAdmin) {

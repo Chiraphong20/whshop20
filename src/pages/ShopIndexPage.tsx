@@ -2,17 +2,24 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ShoppingCart, Plus, ShoppingBag, Gift, Truck, HelpCircle } from 'lucide-react';
 import Header from '../components/Header';
-import { CATEGORIES } from '../constants';
-import { Product } from '../types';
+import { Product, Category } from '../types';
+import * as LucideIcons from 'lucide-react';
 
 interface ShopIndexPageProps {
   cartCount: number;
   products: Product[];
   addToCart: (product: Product) => void;
-  isLoading?: boolean; // ✅ เพิ่ม Prop สำหรับเช็คสถานะโหลดข้อมูล
+  categories: Category[];
+  allOrders?: any[]; // เพิ่มเพื่อให้เข้ากับโครงสร้างข้อมูล
+  isLoading?: boolean;
 }
 
-const ShopIndexPage: React.FC<ShopIndexPageProps> = ({ cartCount, products, addToCart, isLoading = false }) => {
+const DynamicIcon = ({ name, className }: { name: string, className?: string }) => {
+  const IconComponent = (LucideIcons as any)[name] || LucideIcons.Box;
+  return <IconComponent className={className} />;
+};
+
+const ShopIndexPage: React.FC<ShopIndexPageProps> = ({ cartCount, products, categories, addToCart, isLoading = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
 
@@ -156,16 +163,16 @@ const ShopIndexPage: React.FC<ShopIndexPageProps> = ({ cartCount, products, addT
         ) : (
           /* CASE 2: ยังไม่ค้นหา (แสดงหมวดหมู่เหมือนเดิม) */
           <div className="grid grid-cols-2 gap-3 animate-in fade-in zoom-in duration-300">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <Link
-                key={cat.name}
+                key={cat.id}
                 to={`/shop/${cat.name}`}
-                className={`aspect-[4/3] ${cat.color} bg-white border rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm transition-all active:scale-95 hover:shadow-md`}
+                className={`aspect-[4/3] ${cat.color} border rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm transition-all active:scale-95 hover:shadow-md`}
               >
-                <div className="p-2.5 bg-slate-50 rounded-full shadow-inner border border-slate-100 text-slate-700">
-                  {cat.icon}
+                <div className="p-2.5 bg-white/50 rounded-full shadow-inner border border-white/50 text-slate-700">
+                  <DynamicIcon name={cat.icon} className="w-7 h-7" />
                 </div>
-                <span className="font-bold text-slate-800 text-sm text-center px-1">{cat.name}</span>
+                <span className="font-bold text-slate-800 text-sm text-center px-1 line-clamp-1">{cat.name}</span>
               </Link>
             ))}
           </div>

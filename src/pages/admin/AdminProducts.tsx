@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { message, Modal, Select } from 'antd';
 import { API_URL, getAuthHeaders } from '../../config';
+import { Category } from '../../types';
 
 // --- Mocks & Types สำหรับ Preview Environment ---
 export interface Product {
@@ -38,12 +39,7 @@ const CLOUD_NAME = "dffqpiizc";
 const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/q_auto,f_auto,w_800/`;
 // --------------------------------------------------------
 
-const CATEGORIES_LIST = [
-  'ของเล่นเด็ก', 'อุปกรณ์กีฬา', 'อุปกรณ์ทำความสะอาด', 'เครื่องครัว', 'อุปกรณ์แคมปิ้ง',
-  'พลาสติก', 'อุปกรณ์ไฟฟ้า', 'เครื่องใช้ไฟฟ้า', 'อุปกรณ์สัตว์เลี้ยง', 'เครื่องมือช่าง',
-  'สินค้าเทศกาล', 'เซรามิค', 'อุปกรณ์ขายสินค้า', 'ของใช้ในบ้าน', 'เบ็ดเตล็ด',
-  'กิ๊ฟช็อป', 'เครื่องบูชา', 'เครื่องเขียน', 'อุปกรณ์ไอที'
-];
+// CATEGORIES_LIST was removed and replaced by dynamic categories from props
 
 const INITIAL_UNITS = [
   'ชิ้น', 'แพ็ค', 'โหล', 'ลัง', 'ขวด', 'กระป๋อง', 'ห่อ', 'ถุง', 'กล่อง', 'คู่', 'ชุด'
@@ -64,12 +60,13 @@ interface ProductWithGift extends Product {
 
 interface AdminProductsProps {
   products?: Product[];
+  categories?: Category[];
   onAdd?: (p: Product) => void;
   onEdit?: (p: Product) => void;
   onDelete?: (id: string) => void;
 }
 
-const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete }) => {
+const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, categories = [] }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
@@ -93,7 +90,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete }
   const excelInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<ProductWithGift>({
-    id: '', barcode: '', name: '', category: CATEGORIES_LIST[0],
+    id: '', barcode: '', name: '', category: categories.length > 0 ? categories[0].name : '',
     retailPrice: 0, wholesalePrice: 0, minWholesaleQty: 1, unitQty: 1,
     bulkQty: 0, bulkPrice: 0, stock: 0,
     image: '', images: [], imageId: '', description: '', unit: 'ชิ้น', hasGift: false, giftDescription: ''
@@ -133,7 +130,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete }
 
   const resetForm = () => {
     setFormData({
-      id: '', barcode: '', name: '', category: CATEGORIES_LIST[0],
+      id: '', barcode: '', name: '', category: categories.length > 0 ? categories[0].name : '',
       retailPrice: 0, wholesalePrice: 0, minWholesaleQty: 1, unitQty: 1,
       bulkQty: 0, bulkPrice: 0, stock: 0,
       image: '', images: [], imageId: '', description: '', unit: 'ชิ้น', hasGift: false, giftDescription: ''
@@ -619,7 +616,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete }
               onChange={(e) => setFilterCategory(e.target.value)}
             >
               <option value="ทั้งหมด">หมวดหมู่ทั้งหมด</option>
-              {CATEGORIES_LIST.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
             </select>
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
           </div>
@@ -927,7 +924,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete }
                             className="w-full text-sm"
                             value={formData.category ? formData.category.split('/') : []} 
                             onChange={(val: string[]) => setFormData({ ...formData, category: val.join('/') })}
-                            options={CATEGORIES_LIST.map(cat => ({ value: cat, label: cat }))}
+                            options={categories.map(cat => ({ value: cat.name, label: cat.name }))}
                           />
                         </div>
                         <div className="xl:col-span-3">

@@ -519,7 +519,47 @@ app.delete('/api/products', async (req, res) => {
 });
 
 // =========================================================
-// 📢 5. API: จัดการโปรโมชั่น (Posts)
+// 📁 5. API: จัดการหมวดหมู่ (Categories)
+// =========================================================
+
+app.get('/api/categories', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM categories ORDER BY displayOrder ASC');
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/categories', async (req, res) => {
+  try {
+    const { name, icon, color, displayOrder } = req.body;
+    const [result] = await pool.execute(
+      'INSERT INTO categories (name, icon, color, displayOrder) VALUES (?, ?, ?, ?)',
+      [name, icon || 'Box', color || 'bg-slate-50 border-slate-200', displayOrder || 0]
+    );
+    res.status(201).json({ success: true, id: result.insertId });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/categories/:id', async (req, res) => {
+  try {
+    const { name, icon, color, displayOrder } = req.body;
+    await pool.execute(
+      'UPDATE categories SET name=?, icon=?, color=?, displayOrder=? WHERE id=?',
+      [name, icon, color, displayOrder, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/categories/:id', async (req, res) => {
+  try {
+    await pool.execute('DELETE FROM categories WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// =========================================================
+// 📢 6. API: จัดการโปรโมชั่น (Posts)
 // =========================================================
 
 app.get('/api/posts', async (req, res) => {

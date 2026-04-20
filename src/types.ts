@@ -78,3 +78,12 @@ export interface Order {
 export interface CartItem extends Product {
   quantity: number;
 }
+
+export interface Category {
+  id: number;
+  name: string;
+  icon: string;
+  color: string;
+  displayOrder: number;
+  createdAt?: string;
+}
