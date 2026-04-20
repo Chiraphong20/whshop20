@@ -364,6 +364,7 @@ const App: React.FC = () => {
             <Route path="products" element={
               <AdminProducts
                 products={products}
+                categories={categories}
                 onAdd={(p) => setProducts(prev => [...prev, p])}
                 onEdit={(p) => setProducts(prev => prev.map(prod => prod.id === p.id ? p : prod))}
                 onDelete={(id) => setProducts(prev => prev.filter(prod => prod.id !== id))}
