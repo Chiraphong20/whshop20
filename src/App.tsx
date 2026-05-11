@@ -258,6 +258,7 @@ const App: React.FC = () => {
 
     setOrders(prev => [savedOrder, ...prev]);
     prevOrdersCount.current += 1;
+    return savedOrder.id;
   };
 
   const handleUpdateOrderDetails = async (id: string, updatedItems: any[], newTotalAmount: number) => {

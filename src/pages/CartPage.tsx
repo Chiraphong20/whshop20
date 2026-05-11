@@ -8,7 +8,7 @@ interface CartPageProps {
   cart: CartItem[];
   cartTotal: number;
   updateCartQty: (id: string, delta: number) => void;
-  onPlaceOrder: (order: Partial<Order>) => Promise<void> | void;
+  onPlaceOrder: (order: Partial<Order>) => Promise<string>;
   clearCart: () => void;
 }
 
@@ -59,7 +59,7 @@ const CartPage: React.FC<CartPageProps> = ({ cart, cartTotal, updateCartQty, onP
     });
 
     try {
-      await onPlaceOrder({
+      const orderId = await onPlaceOrder({
         customerName: formData.customerName,
         customerContact: formData.customerContact,
         address: formData.deliveryMethod === 'PICKUP' ? 'รับเองที่ร้าน' : formData.address,
@@ -67,17 +67,25 @@ const CartPage: React.FC<CartPageProps> = ({ cart, cartTotal, updateCartQty, onP
         items: orderItems as any,
         deliveryMethod: formData.deliveryMethod
       });
-      
-      // ส่งข้อความไปหาแอดมิน (LINE OA) ในฐานะลูกค้า
+
+      // ส่งสรุปออเดอร์เข้า LINE OA ในฐานะลูกค้า เพื่อให้แชทเด้งขึ้นใน OA inbox
       try {
         const liff = (await import('@line/liff')).default;
         if (liff.isInClient() && liff.isLoggedIn()) {
-           await liff.sendMessages([
-             {
-               type: "text",
-               text: "รับออเดอร์ด้วยน้าา"
-             }
-           ]);
+          const itemLines = orderItems.map((item: typeof orderItems[0]) => {
+            const unitDetail = item.unitQty && item.unit !== 'ชิ้น' ? ` (${item.unit}ละ ${item.unitQty} ชิ้น)` : '';
+            return `• ${item.productName} ${item.quantity} ${item.unit}${unitDetail}`;
+          }).join('\n');
+          const deliveryText = formData.deliveryMethod === 'PICKUP' ? '🛍️ รับเองที่ร้าน' : '🚚 จัดส่ง';
+          const summaryText =
+            `🛍️ สั่งซื้อสินค้าแล้วนะคะ\n` +
+            `━━━━━━━━━━━━━━━━━\n` +
+            `📋 ออร์เดอร์: #${orderId}\n` +
+            `${deliveryText}\n` +
+            `💰 ยอดรวม: ${cartTotal.toLocaleString()} บาท\n\n` +
+            `📦 รายการสินค้า:\n${itemLines}\n` +
+            `━━━━━━━━━━━━━━━━━`;
+          await liff.sendMessages([{ type: 'text', text: summaryText }]);
         }
       } catch (liffErr) {
         console.error('Failed to send message via LIFF:', liffErr);

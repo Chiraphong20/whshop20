@@ -384,6 +384,38 @@ app.post('/api/orders', async (req, res) => {
       console.error("❌ LINE Error Details:", lineError.body || lineError);
     }
 
+    // 📩 ส่งข้อความยืนยันออร์เดอร์ให้ลูกค้า (เฉพาะที่มี LINE User ID)
+    if (customerLineUserId) {
+      const itemsWithUnit = items.map(item => {
+        const unit = item.unit || 'ชิ้น';
+        const unitQty = item.unitQty;
+        const unitDetail = unitQty && unit !== 'ชิ้น' ? ` (${unit}ละ ${unitQty} ชิ้น)` : '';
+        return `• ${item.productName || item.name} ${item.quantity} ${unit}${unitDetail}`;
+      }).join('\n');
+
+      const deliveryText = deliveryMethod === 'PICKUP' ? '🛍️ รับเองที่ร้าน' : `🚚 จัดส่ง`;
+
+      const customerConfirmText =
+        `✅ รับออร์เดอร์แล้วค่ะ ขอบคุณที่สั่งซื้อสินค้านะคะ 🙏\n` +
+        `━━━━━━━━━━━━━━━━━\n` +
+        `📋 เลขออร์เดอร์: #${generatedId}\n` +
+        `${deliveryText}\n` +
+        `💰 ยอดรวม: ${Number(totalAmount).toLocaleString()} บาท\n\n` +
+        `📦 รายการสินค้า:\n${itemsWithUnit}\n` +
+        `━━━━━━━━━━━━━━━━━\n` +
+        `ทางร้านจะรีบดำเนินการให้นะคะ 😊`;
+
+      try {
+        await lineClient.pushMessage({
+          to: customerLineUserId,
+          messages: [{ type: 'text', text: customerConfirmText }]
+        });
+        console.log(`✅ Sent order confirmation to customer: ${customerLineUserId}`);
+      } catch (custErr) {
+        console.error('❌ Failed to send confirmation to customer:', custErr.body?.message || custErr.message);
+      }
+    }
+
     // ✅ ส่ง Response กลับไปหาหน้าเว็บ "แค่ครั้งเดียว" ตรงนี้
     return res.status(201).json({ success: true, message: 'บันทึกออเดอร์และแจ้งเตือนสำเร็จ', id: generatedId });
 
