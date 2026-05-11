@@ -52,7 +52,9 @@ const CartPage: React.FC<CartPageProps> = ({ cart, cartTotal, updateCartQty, onP
         quantity: item.quantity,
         price: price,
         totalPrice: price * item.quantity,
-        productImage: item.image || ''
+        productImage: item.image || '',
+        unit: item.unit || 'ชิ้น',
+        unitQty: item.unitQty
       };
     });
 

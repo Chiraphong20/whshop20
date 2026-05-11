@@ -128,9 +128,11 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
         const itemsList = order.items.map((item, i) => {
             const originalQty = item.quantity;
             const currentQty = editedQuantities[`${order.id}-${i}`] ?? originalQty;
+            const unit = item.unit || 'ชิ้น';
+            const unitDetail = item.unitQty && unit !== 'ชิ้น' ? ` [${unit}ละ ${item.unitQty} ชิ้น]` : '';
             if (currentQty === 0) return `${i + 1}. ❌ ${item.productName} (สินค้าหมด)`;
-            else if (currentQty < originalQty) return `${i + 1}. ⚠️ ${item.productName} (มีแค่ x${currentQty})`;
-            else return `${i + 1}. ✅ ${item.productName} (x${currentQty})`;
+            else if (currentQty < originalQty) return `${i + 1}. ⚠️ ${item.productName} (มีแค่ ${currentQty} ${unit}${unitDetail})`;
+            else return `${i + 1}. ✅ ${item.productName} (${currentQty} ${unit}${unitDetail})`;
         }).join('\n');
 
         const headerTitle = hasChanges ? "⚠️ แจ้งสรุปรายการสินค้า (มีการปรับเปลี่ยน)" : "🛍️ สรุปรายการสั่งซื้อ";
@@ -467,10 +469,20 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                 <div className="space-y-1.5">
                                     {receiptOrder.items.map((item: any, i: number) => (
                                         <div key={i} className="flex justify-between items-start gap-2">
+                                            {item.productImage && (
+                                                <img
+                                                    src={item.productImage}
+                                                    alt={item.productName || item.name}
+                                                    className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-100"
+                                                />
+                                            )}
                                             <div className="flex-1">
                                                 <div className="text-gray-800 text-xs leading-snug">{item.productName || item.name}</div>
                                                 <div className="text-gray-400 text-xs">
-                                                    {item.quantity} {item.unit || 'ชิ้น'} × ฿{(item.price || 0).toLocaleString()}
+                                                    {item.quantity} {item.unit || 'ชิ้น'}
+                                                    {item.unitQty && item.unit && item.unit !== 'ชิ้น' && (
+                                                        <span className="text-gray-300"> ({item.unit}ละ {item.unitQty} ชิ้น)</span>
+                                                    )} × ฿{(item.price || 0).toLocaleString()}
                                                 </div>
                                             </div>
                                             <div className="font-bold text-gray-800 text-xs shrink-0">

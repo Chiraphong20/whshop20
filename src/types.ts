@@ -51,6 +51,8 @@ export interface OrderItem {
   quantity: number;
   price: number;
   totalPrice: number;
+  unit?: string;
+  unitQty?: number;
 }
 
 export interface Order {
