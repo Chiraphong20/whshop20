@@ -317,7 +317,11 @@ app.post('/api/orders', async (req, res) => {
     await pool.execute(sql, values);
 
     // 2. เตรียมข้อความแจ้งเตือน (ใช้ชื่อ messageText ให้ชัดเจน)
-    const orderItemsText = items.map(item => `- ${item.productName || item.name} (${item.quantity} ชิ้น)`).join('\n');
+    const orderItemsText = items.map(item => {
+      const unit = item.unit || 'ชิ้น';
+      const unitDetail = item.unitQty && unit !== 'ชิ้น' ? ` (${unit}ละ ${item.unitQty} ชิ้น)` : '';
+      return `• ${item.productName || item.name} ${item.quantity} ${unit}${unitDetail}`;
+    }).join('\n');
 
     // URL สำหรับกดเข้าดูออเดอร์ในระบบหลังบ้าน
     const adminUrl = process.env.VITE_API_URL
