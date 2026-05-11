@@ -48,6 +48,9 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
     const [isReceiptOpen, setIsReceiptOpen] = useState(false);
     const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
 
+    // 🖼️ State สำหรับดูรูปขยาย
+    const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
     // ✅ State สำหรับสร้างออเดอร์ใหม่
     const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
     const [newCustomerName, setNewCustomerName] = useState('');
@@ -122,14 +125,24 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
             hasChanges: hasChanges || manualTotalAmount !== '' || refundAmount !== 0
         };
     };
+    // ดึงข้อมูล unit/unitQty/image จาก item ก่อน ถ้าไม่มีให้ fallback จาก products (ออเดอร์เก่า)
+    const getItemInfo = (item: any) => {
+        const product = products.find(p => p.id === item.productId);
+        return {
+            image: item.productImage || product?.image || '',
+            unit: item.unit || product?.unit || 'ชิ้น',
+            unitQty: item.unitQty ?? product?.unitQty,
+        };
+    };
+
     const generateOrderSummaryText = (order: Order) => {
         const { refundAmount, netTotal, hasChanges } = calculateFinancials(order);
 
         const itemsList = order.items.map((item, i) => {
             const originalQty = item.quantity;
             const currentQty = editedQuantities[`${order.id}-${i}`] ?? originalQty;
-            const unit = item.unit || 'ชิ้น';
-            const unitDetail = item.unitQty && unit !== 'ชิ้น' ? ` [${unit}ละ ${item.unitQty} ชิ้น]` : '';
+            const { unit, unitQty } = getItemInfo(item);
+            const unitDetail = unitQty && unit !== 'ชิ้น' ? ` [${unit}ละ ${unitQty} ชิ้น]` : '';
             if (currentQty === 0) return `${i + 1}. ❌ ${item.productName} (สินค้าหมด)`;
             else if (currentQty < originalQty) return `${i + 1}. ⚠️ ${item.productName} (มีแค่ ${currentQty} ${unit}${unitDetail})`;
             else return `${i + 1}. ✅ ${item.productName} (${currentQty} ${unit}${unitDetail})`;
@@ -401,7 +414,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                 width={400}
                 centered
                 styles={{ body: { padding: 0 } }}
-                style={{ borderRadius: '16px', overflow: 'hidden' }}
+                style={{ maxWidth: 'calc(100vw - 16px)', borderRadius: '16px', overflow: 'hidden' }}
             >
                 {receiptOrder && (
                     <div className="font-mono bg-white">
@@ -467,21 +480,24 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                             <div className="border-b border-dashed border-gray-200 pb-3">
                                 <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">รายการสินค้า</div>
                                 <div className="space-y-1.5">
-                                    {receiptOrder.items.map((item: any, i: number) => (
+                                    {receiptOrder.items.map((item: any, i: number) => {
+                                        const info = getItemInfo(item);
+                                        return (
                                         <div key={i} className="flex justify-between items-start gap-2">
-                                            {item.productImage && (
+                                            {info.image && (
                                                 <img
-                                                    src={item.productImage}
+                                                    src={info.image}
                                                     alt={item.productName || item.name}
-                                                    className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-100"
+                                                    onClick={() => setImagePreviewUrl(info.image)}
+                                                    className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
                                                 />
                                             )}
                                             <div className="flex-1">
                                                 <div className="text-gray-800 text-xs leading-snug">{item.productName || item.name}</div>
                                                 <div className="text-gray-400 text-xs">
-                                                    {item.quantity} {item.unit || 'ชิ้น'}
-                                                    {item.unitQty && item.unit && item.unit !== 'ชิ้น' && (
-                                                        <span className="text-gray-300"> ({item.unit}ละ {item.unitQty} ชิ้น)</span>
+                                                    {item.quantity} {info.unit}
+                                                    {info.unitQty && info.unit !== 'ชิ้น' && (
+                                                        <span className="text-gray-300"> ({info.unit}ละ {info.unitQty} ชิ้น)</span>
                                                     )} × ฿{(item.price || 0).toLocaleString()}
                                                 </div>
                                             </div>
@@ -489,7 +505,8 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                                 ฿{((item.price || 0) * item.quantity).toLocaleString()}
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -557,6 +574,27 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                     </div>
                 )}
             </Modal>
+
+            {/* IMAGE PREVIEW MODAL */}
+            {imagePreviewUrl && (
+                <div
+                    className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4"
+                    onClick={() => setImagePreviewUrl(null)}
+                >
+                    <img
+                        src={imagePreviewUrl}
+                        alt="preview"
+                        className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
+                        onClick={e => e.stopPropagation()}
+                    />
+                    <button
+                        onClick={() => setImagePreviewUrl(null)}
+                        className="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center text-white transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+            )}
 
             {/* HEADER & FILTER */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
@@ -674,28 +712,31 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                             )}
                                         </div>
 
-                                        <div className="flex gap-2 justify-end mt-auto pt-2 border-t border-black/5">
-                                            <Tooltip title="ดูสลิปออเดอร์">
-                                                <button onClick={() => { setReceiptOrder(order); setIsReceiptOpen(true); }} className="p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-lg transition-all shadow-sm text-xs font-bold">🧾</button>
-                                            </Tooltip>
-                                            <Tooltip title="Copy บิล"><button onClick={() => handleCopyOrderText(order)} className="p-2 text-gray-600 bg-white/50 hover:bg-white border border-transparent rounded-lg transition-all shadow-sm"><Copy size={18} /></button></Tooltip>
+                                        <div className="flex flex-wrap gap-1.5 mt-auto pt-2 border-t border-black/5">
+                                            <button onClick={() => { setReceiptOrder(order); setIsReceiptOpen(true); }} className="flex items-center gap-1.5 px-3 py-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-xl transition-all text-xs font-semibold">
+                                                🧾 สลิป
+                                            </button>
+                                            <button onClick={() => handleCopyOrderText(order)} className="flex items-center gap-1 px-2.5 py-2 text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-all">
+                                                <Copy size={15} />
+                                            </button>
                                             {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
-                                                <Tooltip title="จัดของ/แก้ไขออเดอร์"><button onClick={() => handleOpenPicking(order)} className="p-2 text-gray-600 bg-white/50 hover:bg-white rounded-lg shadow-sm"><CheckSquare size={18} /></button></Tooltip>
+                                                <button onClick={() => handleOpenPicking(order)} className="flex items-center gap-1.5 px-3 py-2 text-gray-700 bg-white hover:bg-gray-50 rounded-xl text-xs font-medium border border-gray-200 shadow-sm">
+                                                    <CheckSquare size={14} /> จัดของ
+                                                </button>
                                             )}
-
-                                            {order.status === 'PENDING' && <Button type="primary" size="small" className="bg-indigo-600" onClick={() => confirmStatusChange(order.id, 'CONFIRMED')}>ยืนยัน</Button>}
-                                            {order.status === 'CONFIRMED' && <Button type="primary" size="small" className="bg-purple-600" onClick={() => openShippingModal(order)}>{order.deliveryMethod === 'PICKUP' ? 'ลูกค้ารับของแล้ว' : 'แจ้งพัสดุ'}</Button>}
-                                            {(order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && order.status !== 'SHIPPED') && (
-                                                <Button danger size="small" onClick={() => confirmStatusChange(order.id, 'CANCELLED')}>ยกเลิก</Button>
-                                            )}
-                                            {(order.status === 'SHIPPED' || order.status === 'COMPLETED') && (
-                                                <Button size="small" onClick={() => openShippingModal(order)}>{order.deliveryMethod === 'PICKUP' ? 'ดูสถานะรับของ' : 'ดู/แก้ไขพัสดุ'}</Button>
-                                            )}
-                                            {order.status === 'CANCELLED' && (
-                                                <Tooltip title="ลบออเดอร์ถาวร">
-                                                    <Button danger size="small" icon={<Trash2 size={14} />} onClick={() => confirmDeleteOrder(order.id)} />
-                                                </Tooltip>
-                                            )}
+                                            <div className="flex gap-1.5 ml-auto flex-wrap">
+                                                {order.status === 'PENDING' && <Button type="primary" size="small" className="bg-indigo-600 rounded-xl" onClick={() => confirmStatusChange(order.id, 'CONFIRMED')}>ยืนยัน</Button>}
+                                                {order.status === 'CONFIRMED' && <Button type="primary" size="small" className="bg-purple-600 rounded-xl" onClick={() => openShippingModal(order)}>{order.deliveryMethod === 'PICKUP' ? 'รับของแล้ว' : 'แจ้งพัสดุ'}</Button>}
+                                                {(order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && order.status !== 'SHIPPED') && (
+                                                    <Button danger size="small" className="rounded-xl" onClick={() => confirmStatusChange(order.id, 'CANCELLED')}>ยกเลิก</Button>
+                                                )}
+                                                {(order.status === 'SHIPPED' || order.status === 'COMPLETED') && (
+                                                    <Button size="small" className="rounded-xl" onClick={() => openShippingModal(order)}>{order.deliveryMethod === 'PICKUP' ? 'ดูสถานะรับของ' : 'ดู/แก้ไขพัสดุ'}</Button>
+                                                )}
+                                                {order.status === 'CANCELLED' && (
+                                                    <Button danger size="small" icon={<Trash2 size={14} />} onClick={() => confirmDeleteOrder(order.id)} className="rounded-xl" />
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -818,7 +859,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
             )}
 
             {/* --- MODAL: PICKING LIST --- */}
-            <Modal title={null} open={isPickingModalOpen} onCancel={() => setIsPickingModalOpen(false)} footer={null} width={600} centered className="rounded-2xl">
+            <Modal title={null} open={isPickingModalOpen} onCancel={() => setIsPickingModalOpen(false)} footer={null} width={600} centered className="rounded-2xl" style={{ maxWidth: 'calc(100vw - 16px)' }} styles={{ body: { maxHeight: '90vh', overflowY: 'auto' } }}>
                 {pickingOrder && (
                     <div className="p-2">
                         <div className="flex justify-between items-center mb-4 border-b pb-3">
@@ -838,24 +879,37 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                 else if (status === 'PICKED' && currentQty < originalQty) itemClass = "bg-yellow-50 border-yellow-200";
                                 else if (status === 'PICKED') itemClass = "bg-green-50 border-green-200";
 
+                                const { image: itemImg, unit: itemUnit, unitQty: itemUnitQty } = getItemInfo(item);
                                 return (
                                     <div key={index} className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-xl border transition-all gap-3 ${itemClass}`}>
                                         <div className="flex items-center gap-3 flex-1 w-full">
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${currentQty === 0 ? 'bg-red-500 text-white' : status === 'PICKED' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                                                {currentQty === 0 ? <X size={18} /> : status === 'PICKED' ? <CheckSquare size={18} /> : <Package size={18} />}
-                                            </div>
+                                            {itemImg ? (
+                                                <img
+                                                    src={itemImg}
+                                                    alt={item.productName}
+                                                    onClick={() => setImagePreviewUrl(itemImg)}
+                                                    className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                                />
+                                            ) : (
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors ${currentQty === 0 ? 'bg-red-500 text-white' : status === 'PICKED' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                                    {currentQty === 0 ? <X size={18} /> : status === 'PICKED' ? <CheckSquare size={18} /> : <Package size={18} />}
+                                                </div>
+                                            )}
                                             <div className="flex-1">
                                                 <div className={`font-medium line-clamp-2 leading-tight ${currentQty === 0 ? 'text-red-700 line-through' : 'text-gray-800'}`}>
                                                     {item.productName}
                                                 </div>
-                                                <div className="text-xs text-gray-500 mt-1">฿{itemPrice.toLocaleString()} / ชิ้น</div>
+                                                <div className="text-xs text-gray-500 mt-1">
+                                                    ฿{itemPrice.toLocaleString()} / {itemUnit}
+                                                    {itemUnitQty && itemUnit !== 'ชิ้น' && <span className="text-gray-400"> ({itemUnit}ละ {itemUnitQty} ชิ้น)</span>}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center justify-between w-full sm:w-auto bg-white sm:bg-transparent rounded-lg p-1 sm:p-0 border sm:border-transparent border-gray-200">
-                                            <div className="flex items-center">
-                                                <button onClick={() => handleQtyChange(pickingOrder.id, index, originalQty, -1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-md"><Minus size={16} /></button>
-                                                <span className={`w-10 text-center font-bold text-lg ${currentQty < originalQty ? 'text-orange-500' : 'text-gray-800'}`}>{currentQty}</span>
-                                                <button onClick={() => handleQtyChange(pickingOrder.id, index, originalQty, 1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-md"><Plus size={16} /></button>
+                                        <div className="flex items-center justify-between w-full sm:w-auto bg-white sm:bg-transparent rounded-xl p-1 sm:p-0 border sm:border-transparent border-gray-200">
+                                            <div className="flex items-center gap-1">
+                                                <button onClick={() => handleQtyChange(pickingOrder.id, index, originalQty, -1)} className="w-11 h-11 flex items-center justify-center text-gray-600 bg-gray-100 hover:bg-red-100 hover:text-red-600 rounded-xl active:scale-95 transition-all"><Minus size={18} /></button>
+                                                <span className={`w-12 text-center font-bold text-xl ${currentQty < originalQty ? 'text-orange-500' : 'text-gray-800'}`}>{currentQty}</span>
+                                                <button onClick={() => handleQtyChange(pickingOrder.id, index, originalQty, 1)} className="w-11 h-11 flex items-center justify-center text-gray-600 bg-gray-100 hover:bg-green-100 hover:text-green-600 rounded-xl active:scale-95 transition-all"><Plus size={18} /></button>
                                             </div>
                                         </div>
                                     </div>
@@ -946,6 +1000,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                 width={700}
                 centered
                 className="rounded-2xl"
+                style={{ maxWidth: 'calc(100vw - 16px)' }}
             >
                 <div className="pt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                     <div className="grid grid-cols-2 gap-4">
