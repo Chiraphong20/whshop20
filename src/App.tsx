@@ -2,8 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import liff from '@line/liff';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { notification, message } from 'antd';
-import { Product, Post, CartItem, Order, OrderStatus, Category } from './types';
-import { POSTS } from './services/mockData';
+import { Product, CartItem, Order, OrderStatus, Category } from './types';
 import { API_URL, getAuthHeaders } from './config';
 
 // Pages - Client
@@ -30,12 +29,12 @@ import AdminReport from './pages/admin/AdminReport';
 import AdminSettings from './pages/admin/AdminSettings';
 import LineCallbackPage from './pages/admin/LineCallbackPage';
 import AdminProfile from './pages/admin/AdminProfile';
+import AdminActivity from './pages/admin/AdminActivity';
 import AdminCategories from './pages/admin/AdminCategories';
 
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [posts, setPosts] = useState<Post[]>(POSTS || []);
   const [orders, setOrders] = useState<Order[]>([]);
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -306,7 +305,9 @@ const App: React.FC = () => {
 
   const handleDeleteOrder = async (id: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/orders/${id}`, {
+      const adminData = JSON.parse(localStorage.getItem('admin_user') || '{}');
+      const by = encodeURIComponent(adminData.name || adminData.username || 'แอดมิน');
+      const res = await fetch(`${API_URL}/api/orders/${id}?by=${by}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
@@ -351,7 +352,7 @@ const App: React.FC = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/admin" element={<AdminLayout orders={orders} />}>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<AdminDashboard orders={orders} />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="orders" element={
               <AdminOrders
                 orders={orders} products={products}
@@ -371,12 +372,13 @@ const App: React.FC = () => {
                 onDelete={(id) => setProducts(prev => prev.filter(prod => prod.id !== id))}
               />
             } />
-            <Route path="posts" element={<AdminPosts posts={posts} products={products} onAdd={() => { }} onEdit={() => { }} onDelete={() => { }} />} />
+            <Route path="posts" element={<AdminPosts onAdd={() => { }} onEdit={() => { }} onDelete={() => { }} />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="reports" element={<AdminReport orders={orders} products={products} />} />
             <Route path="profile" element={<AdminProfile />} />
+            <Route path="activity" element={<AdminActivity />} />
           </Route>
         </Route>
 

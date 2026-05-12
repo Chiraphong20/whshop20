@@ -12,13 +12,17 @@ import { Category } from '../../types';
 // --- Mocks & Types สำหรับ Preview Environment ---
 export interface Product {
   id: string;
+  barcode?: string;
   name: string;
   category: string;
   retailPrice: number;
   wholesalePrice: number;
   minWholesaleQty: number;
-  unitQty?: number;       // จำนวนชิ้นต่อหน่วย เช่น 1 แพ็ค = 12 ชิ้น
+  unitQty?: number;
+  bulkQty?: number;
+  bulkPrice?: number;
   stock: number;
+  unit?: string;
   image: string;
   images?: string[];
 }

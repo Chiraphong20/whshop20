@@ -745,7 +745,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                                 {(order.status === 'SHIPPED' || order.status === 'COMPLETED') && (
                                                     <Button size="small" className="rounded-xl" onClick={() => openShippingModal(order)}>{order.deliveryMethod === 'PICKUP' ? 'ดูสถานะรับของ' : 'ดู/แก้ไขพัสดุ'}</Button>
                                                 )}
-                                                {order.status === 'CANCELLED' && (
+                                                {(order.status === 'CANCELLED' || order.status === 'COMPLETED') && (
                                                     <Button danger size="small" icon={<Trash2 size={14} />} onClick={() => confirmDeleteOrder(order.id)} className="rounded-xl" />
                                                 )}
                                             </div>
@@ -845,7 +845,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                                                 <Button size="small" icon={order.deliveryMethod === 'PICKUP' ? <CheckSquare size={14} /> : <Truck size={14} />} onClick={() => openShippingModal(order)} />
                                                             </Tooltip>
                                                         )}
-                                                        {order.status === 'CANCELLED' && (
+                                                        {(order.status === 'CANCELLED' || order.status === 'COMPLETED') && (
                                                             <Tooltip title="ลบออเดอร์ถาวร">
                                                                 <Button danger size="small" icon={<Trash2 size={14} />} onClick={() => confirmDeleteOrder(order.id)} />
                                                             </Tooltip>
@@ -988,7 +988,7 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                 onChange={(val) => {
                                     const p = products.find(x => x.id === val);
                                     if (p) {
-                                        const newItem = { productId: p.id, productName: p.name, quantity: 1, price: p.retailPrice };
+                                        const newItem: OrderItem = { productId: p.id, productName: p.name, quantity: 1, price: p.retailPrice, totalPrice: p.retailPrice, productImage: p.image || '', unit: p.unit, unitQty: p.unitQty };
                                         setPickingOrder({ ...pickingOrder, items: [...pickingOrder.items, newItem] });
                                         setEditedQuantities(prev => ({ ...prev, [`${pickingOrder.id}-${pickingOrder.items.length}`]: 1 }));
                                     }

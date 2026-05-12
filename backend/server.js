@@ -34,6 +34,35 @@ app.use(cors({
 // 🟢 Middleware ตัวนี้จะ parse body ของ API อื่นๆ
 app.use(express.json());
 
+// =========================================================
+// 📋 Activity Log — สร้างตารางและ helper function
+// =========================================================
+(async () => {
+  try {
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        action VARCHAR(80) NOT NULL,
+        entity_type VARCHAR(20) DEFAULT 'order',
+        entity_id VARCHAR(50),
+        description TEXT,
+        performed_by VARCHAR(100) DEFAULT 'ระบบ',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✅ activity_logs table ready');
+  } catch (e) { console.error('activity_logs table error:', e.message); }
+})();
+
+const logActivity = async (action, entityType, entityId, description, performedBy) => {
+  try {
+    await pool.execute(
+      'INSERT INTO activity_logs (action, entity_type, entity_id, description, performed_by) VALUES (?, ?, ?, ?, ?)',
+      [action, entityType || 'order', entityId || null, description || null, performedBy || 'ระบบ']
+    );
+  } catch (e) { console.error('logActivity error:', e.message); }
+};
+
 app.post('/api/webhook', (req, res) => {
   try {
     const events = req.body.events;
@@ -258,6 +287,14 @@ app.get('/api/orders', async (req, res) => {
 app.delete('/api/orders/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const performedBy = req.query.by || 'แอดมิน';
+    const [rows] = await pool.query('SELECT customerName, totalAmount, status FROM orders WHERE id = ?', [id]);
+    if (rows.length > 0) {
+      const o = rows[0];
+      await logActivity('ลบออเดอร์', 'order', id,
+        `ลบออเดอร์ #${id} ลูกค้า: ${o.customerName} ยอด: ฿${Number(o.totalAmount).toLocaleString()} สถานะเดิม: ${o.status}`,
+        performedBy);
+    }
     await pool.execute('DELETE FROM orders WHERE id = ?', [id]);
     res.json({ success: true, message: 'ลบออเดอร์สำเร็จ' });
   } catch (err) {
@@ -457,6 +494,10 @@ app.put('/api/orders/:id/status', async (req, res) => {
     values.push(req.params.id);
 
     await pool.execute(sql, values);
+    const statusLabels = { PENDING: 'รอตรวจสอบ', CONFIRMED: 'รอจัดส่ง', SHIPPED: 'กำลังจัดส่ง', COMPLETED: 'สำเร็จ', CANCELLED: 'ยกเลิก' };
+    await logActivity('เปลี่ยนสถานะออเดอร์', 'order', req.params.id,
+      `#${req.params.id}: ${statusLabels[currentStatus] || currentStatus} → ${statusLabels[status] || status}`,
+      managedBy || 'แอดมิน');
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -464,13 +505,30 @@ app.put('/api/orders/:id/status', async (req, res) => {
 // อัปเดตข้อมูลออเดอร์ (รายการสินค้าและยอดเงิน)
 app.put('/api/orders/:id', async (req, res) => {
   try {
-    const { items, totalAmount } = req.body;
+    const { items, totalAmount, performedBy } = req.body;
     await pool.execute('UPDATE orders SET items = ?, totalAmount = ? WHERE id = ?', [items, totalAmount, req.params.id]);
+    await logActivity('แก้ไขรายการออเดอร์', 'order', req.params.id,
+      `#${req.params.id}: แก้ไขรายการสินค้า ยอดใหม่ ฿${Number(totalAmount).toLocaleString()}`,
+      performedBy || 'แอดมิน');
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // อัปเดตเลขพัสดุ และสถานะจัดส่งสำเร็จ (PUT)
+// ดึง Activity Logs (สำหรับ SUPER_ADMIN)
+app.get('/api/activity-logs', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
+    const [rows] = await pool.query(
+      'SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [limit, offset]
+    );
+    const [[{ total }]] = await pool.query('SELECT COUNT(*) as total FROM activity_logs');
+    res.json({ success: true, logs: rows, total });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.put('/api/orders/:id/shipping', async (req, res) => {
   try {
     const { trackingNumber, courier, status } = req.body;

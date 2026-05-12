@@ -83,6 +83,7 @@ const AdminDashboard: React.FC = () => {
       todayRevenue,
       todayOrdersCount: todayOrders.length,
       pendingCount,
+      toShipCount,
       totalRevenue,
       adminPerformance: sortedAdmins
     };

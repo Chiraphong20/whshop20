@@ -36,6 +36,7 @@ export interface Post {
   id: string;
   title: string;
   description: string;
+  imageUrl?: string;
   linkedProductIds: string[];
   createdAt: string; // ISO Date
   expiresAt: string; // ISO Date

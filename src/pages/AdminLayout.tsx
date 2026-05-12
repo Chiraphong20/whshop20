@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Package, ShoppingBag, FileText, LogOut, Store, LayoutDashboard, BellRing, Users, BarChart2, Menu, X, Settings, UserCircle, LayoutGrid } from 'lucide-react';
+import { Package, ShoppingBag, FileText, LogOut, Store, LayoutDashboard, BellRing, Users, BarChart2, Menu, X, Settings, UserCircle, LayoutGrid, ScrollText } from 'lucide-react';
 import { notification } from 'antd';
 import { Order } from '../types';
 
@@ -44,6 +44,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ orders }) => {
     menus.push({ name: 'โปรโมชั่น (Post)', icon: <FileText size={20} />, path: '/admin/posts' });
     menus.push({ name: 'จัดการแอดมิน (Users)', icon: <Users size={20} />, path: '/admin/users' });
     menus.push({ name: 'การชำระเงิน', icon: <Settings size={20} />, path: '/admin/settings' });
+    menus.push({ name: 'บันทึกกิจกรรม', icon: <ScrollText size={20} />, path: '/admin/activity' });
   }
 
   const handleLogout = () => {
