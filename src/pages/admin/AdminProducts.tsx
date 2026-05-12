@@ -27,11 +27,34 @@ export interface Product {
   images?: string[];
 }
 
-const uploadImageToCloudinary = async (file: File, category: string): Promise<string> => {
-  return new Promise((resolve) => {
-    // จำลองการอัปโหลดรูปภาพด้วยการสร้าง Local Object URL เพื่อให้พรีวิวใน UI ได้
-    setTimeout(() => resolve(URL.createObjectURL(file)), 1000);
+const UPLOAD_PRESET = 'my_shop_preset';
+
+const getPublicIdFromUrl = (url: string): string | undefined => {
+  try {
+    // https://res.cloudinary.com/xxx/image/upload/q_auto,f_auto,w_800/v123/IMG-001.jpg
+    // extract everything after the last transformation segment
+    const match = url.match(/\/upload\/(?:[^/]+\/)*v?\d*\/?(.+?)(?:\.\w+)?$/);
+    if (match?.[1]) return match[1].replace(/^v\d+\//, '');
+  } catch { /* ignore */ }
+  return undefined;
+};
+
+const uploadImageToCloudinary = async (file: File, publicId?: string): Promise<string> => {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', UPLOAD_PRESET);
+  if (publicId) {
+    fd.append('public_id', publicId);
+    fd.append('overwrite', 'true');
+    fd.append('invalidate', 'true');
+  }
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+    method: 'POST',
+    body: fd,
   });
+  if (!res.ok) throw new Error('Upload failed');
+  const data = await res.json();
+  return (data.secure_url as string).replace('/upload/', '/upload/q_auto,f_auto,w_800/');
 };
 
 // ---------------------------------------------
@@ -91,6 +114,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
   const excelInputRef = useRef<HTMLInputElement>(null);
 
   // Pagination state
@@ -505,28 +530,43 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []) as File[];
-    if (files.length > 0) {
-      setUploading(true);
-      try {
-        const uploadPromises = files.map((file: File) => uploadImageToCloudinary(file, formData.category));
-        const imageUrls = await Promise.all(uploadPromises);
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const imageUrls = await Promise.all(files.map(f => uploadImageToCloudinary(f)));
+      setFormData(prev => {
+        const newImages = [...(prev.images || []), ...imageUrls];
+        return { ...prev, images: newImages, image: newImages[0] };
+      });
+      message.success(`อัปโหลดรูปภาพสำเร็จ ${imageUrls.length} รูป`);
+    } catch {
+      message.error('อัปโหลดรูปภาพล้มเหลว กรุณาลองใหม่');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
-        setFormData(prev => {
-          const currentImages = prev.images || [];
-          const newImages = [...currentImages, ...imageUrls];
-          return {
-            ...prev,
-            images: newImages,
-            image: newImages.length > 0 ? newImages[0] : ''
-          };
-        });
-        message.success(`อัปโหลดรูปภาพเพิ่มสำเร็จ ${imageUrls.length} รูป`);
-      } catch (error) {
-        message.error('อัปโหลดรูปภาพล้มเหลว');
-      } finally {
-        setUploading(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      }
+  const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || replacingIndex === null) return;
+    setUploading(true);
+    try {
+      const existingUrl = (formData.images || [])[replacingIndex];
+      const publicId = existingUrl ? getPublicIdFromUrl(existingUrl) : undefined;
+      const newUrl = await uploadImageToCloudinary(file, publicId);
+      setFormData(prev => {
+        const imgs = [...(prev.images || [])];
+        imgs[replacingIndex] = newUrl;
+        return { ...prev, images: imgs, image: replacingIndex === 0 ? newUrl : (prev.image || imgs[0]) };
+      });
+      message.success('เปลี่ยนรูปภาพสำเร็จ');
+    } catch {
+      message.error('อัปโหลดรูปภาพล้มเหลว กรุณาลองใหม่');
+    } finally {
+      setUploading(false);
+      setReplacingIndex(null);
+      if (replaceInputRef.current) replaceInputRef.current.value = '';
     }
   };
 
@@ -935,10 +975,22 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
                           {(formData.images || []).map((imgUrl, idx) => (
                             <div key={idx} className="aspect-square bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden group">
                               <img src={imgUrl} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                                <button type="button" onClick={() => handleRemoveImage(idx)} className="bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600" title="ลบรูปนี้"><Trash2 size={14} /></button>
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                                <button type="button"
+                                  onClick={() => { setReplacingIndex(idx); replaceInputRef.current?.click(); }}
+                                  className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 active:scale-95 transition-all" title="เปลี่ยนรูปใหม่">
+                                  <Upload size={14} />
+                                </button>
+                                <button type="button" onClick={() => handleRemoveImage(idx)} className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 active:scale-95 transition-all" title="ลบรูปนี้">
+                                  <Trash2 size={14} />
+                                </button>
                               </div>
                               {idx === 0 && <span className="absolute top-1 left-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold shadow-sm">รูปหลัก</span>}
+                              {uploading && replacingIndex === idx && (
+                                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                                  <Loader2 className="animate-spin text-orange-500" size={24} />
+                                </div>
+                              )}
                             </div>
                           ))}
 
@@ -955,6 +1007,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
                           </div>
                         </div>
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageUpload} />
+                        <input type="file" ref={replaceInputRef} className="hidden" accept="image/*" onChange={handleReplaceImage} />
                       </div>
 
                       <div>
