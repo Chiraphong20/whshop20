@@ -71,15 +71,16 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
 
     useEffect(() => { setCurrentPage(1); }, [filterStatus, searchTerm, viewMode, filterDate]);
 
-    // เปิด receipt อัตโนมัติเมื่อมี ?id= ใน URL
+    // เปิดหน้าจัดของอัตโนมัติเมื่อมี ?id= ใน URL
     useEffect(() => {
         const idFromUrl = searchParams.get('id');
         if (!idFromUrl || orders.length === 0) return;
         const target = orders.find((o: Order) => o.id === idFromUrl);
         if (target) {
-            setReceiptOrder(target);
-            setIsReceiptOpen(true);
-            setSearchParams({}, { replace: true }); // ลบ ?id= ออกหลังเปิดแล้ว
+            setPickingOrder(target);
+            setManualTotalAmount('');
+            setIsPickingModalOpen(true);
+            setSearchParams({}, { replace: true });
         }
     }, [searchParams, orders]);
 
