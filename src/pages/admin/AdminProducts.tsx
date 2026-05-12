@@ -30,10 +30,13 @@ export interface Product {
 const UPLOAD_PRESET = 'my_shop_preset';
 
 
-const uploadImageToCloudinary = async (file: File): Promise<string> => {
+const uploadImageToCloudinary = async (file: File, productId?: string): Promise<string> => {
   const fd = new FormData();
   fd.append('file', file);
   fd.append('upload_preset', UPLOAD_PRESET);
+  // ใช้ timestamp เพื่อให้ public_id ไม่ซ้ำกับรูปเดิมที่มีอยู่ใน Cloudinary
+  const uniqueId = productId ? `products/${productId}_${Date.now()}` : `products/img_${Date.now()}`;
+  fd.append('public_id', uniqueId);
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
     method: 'POST',
     body: fd,
@@ -523,7 +526,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
     if (files.length === 0) return;
     setUploading(true);
     try {
-      const imageUrls = await Promise.all(files.map(f => uploadImageToCloudinary(f)));
+      const imageUrls = await Promise.all(files.map(f => uploadImageToCloudinary(f, formData.id)));
       setFormData(prev => {
         const newImages = [...(prev.images || []), ...imageUrls];
         return { ...prev, images: newImages, image: newImages[0] };
@@ -542,7 +545,7 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
     if (!file || replacingIndex === null) return;
     setUploading(true);
     try {
-      const newUrl = await uploadImageToCloudinary(file);
+      const newUrl = await uploadImageToCloudinary(file, formData.id);
       setFormData(prev => {
         const imgs = [...(prev.images || [])];
         imgs[replacingIndex] = newUrl;
