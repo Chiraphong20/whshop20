@@ -323,10 +323,7 @@ app.post('/api/orders', async (req, res) => {
       return `• ${item.productName || item.name} ${item.quantity} ${unit}${unitDetail}`;
     }).join('\n');
 
-    // URL สำหรับกดเข้าดูออเดอร์ในระบบหลังบ้าน
-    const adminUrl = process.env.VITE_API_URL
-      ? `${process.env.VITE_API_URL}/admin/orders`
-      : `http://localhost:5173/admin/orders`;
+    const adminUrl = `https://line.wonghiran.com/admin/orders?id=${generatedId}`;
 
     const messageText = `📢 มี Order เข้าแล้วนะะ ตรวจสอบให้หน่อย!\n` +
       `--------------------------\n` +

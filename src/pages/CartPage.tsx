@@ -84,7 +84,8 @@ const CartPage: React.FC<CartPageProps> = ({ cart, cartTotal, updateCartQty, onP
             `${deliveryText}\n` +
             `💰 ยอดรวม: ${cartTotal.toLocaleString()} บาท\n\n` +
             `📦 รายการสินค้า:\n${itemLines}\n` +
-            `━━━━━━━━━━━━━━━━━`;
+            `━━━━━━━━━━━━━━━━━\n` +
+            `🔗 https://line.wonghiran.com/admin/orders?id=${orderId}`;
           await liff.sendMessages([{ type: 'text', text: summaryText }]);
         }
       } catch (liffErr) {
