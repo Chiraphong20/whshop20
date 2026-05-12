@@ -6,6 +6,15 @@ const path = require('path');
 const line = require('@line/bot-sdk');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+const upload = multer({ storage: multer.memoryStorage() });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_linecommerce';
 
@@ -748,6 +757,31 @@ app.put('/api/settings/:key', async (req, res) => {
 
     res.json({ success: true, message: 'บันทึกการตั้งค่าสำเร็จ' });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =========================================================
+// 🖼️ Cloudinary Signed Upload (overwrite รูปเดิมที่ public_id เดิม)
+// =========================================================
+app.post('/api/upload-image', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'ไม่พบไฟล์' });
+    const publicId = req.body.public_id;
+    if (!publicId) return res.status(400).json({ error: 'ต้องระบุ public_id' });
+
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { public_id: publicId, overwrite: true, invalidate: true, resource_type: 'image' },
+        (error, result) => { if (error) reject(error); else resolve(result); }
+      );
+      stream.end(req.file.buffer);
+    });
+
+    const url = result.secure_url.replace('/upload/', '/upload/q_auto,f_auto,w_800/');
+    res.json({ success: true, url });
+  } catch (err) {
+    console.error('Cloudinary upload error:', err);
     res.status(500).json({ error: err.message });
   }
 });

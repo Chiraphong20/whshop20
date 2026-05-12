@@ -27,36 +27,22 @@ export interface Product {
   images?: string[];
 }
 
-const UPLOAD_PRESET = 'my_shop_preset';
-
-
-const uploadImageToCloudinary = async (file: File, productId?: string): Promise<string> => {
+const uploadImageViaBackend = async (file: File, publicId: string): Promise<string> => {
   const fd = new FormData();
   fd.append('file', file);
-  fd.append('upload_preset', UPLOAD_PRESET);
-  // ใช้ timestamp เพื่อให้ public_id ไม่ซ้ำกับรูปเดิมที่มีอยู่ใน Cloudinary
-  const uniqueId = productId ? `products/${productId}_${Date.now()}` : `products/img_${Date.now()}`;
-  fd.append('public_id', uniqueId);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+  fd.append('public_id', publicId);
+  const res = await fetch(`${API_URL}/api/upload-image`, {
     method: 'POST',
+    headers: getAuthHeaders(),
     body: fd,
   });
   const data = await res.json();
-  if (!res.ok) {
-    const msg = data?.error?.message || JSON.stringify(data);
-    console.error('Cloudinary error:', msg);
-    throw new Error(msg);
-  }
-  return (data.secure_url as string).replace('/upload/', '/upload/q_auto,f_auto,w_800/');
+  if (!res.ok) throw new Error(data?.error || 'Upload failed');
+  return data.url;
 };
 
-// ---------------------------------------------
-
 // --------------------------------------------------------
-// 🔧 ตั้งค่า Cloudinary Account ของคุณที่นี่
-// --------------------------------------------------------
-const CLOUD_NAME = "dffqpiizc";
-const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/q_auto,f_auto,w_800/`;
+const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/dffqpiizc/image/upload/q_auto,f_auto,w_800/`;
 // --------------------------------------------------------
 
 // CATEGORIES_LIST was removed and replaced by dynamic categories from props
@@ -526,7 +512,12 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
     if (files.length === 0) return;
     setUploading(true);
     try {
-      const imageUrls = await Promise.all(files.map(f => uploadImageToCloudinary(f, formData.id)));
+      const baseId = formData.imageId || formData.id || `img_${Date.now()}`;
+      const currentCount = (formData.images || []).length;
+      const imageUrls = await Promise.all(files.map((f, i) => {
+        const suffix = currentCount + i === 0 ? '' : `_${currentCount + i}`;
+        return uploadImageViaBackend(f, `${baseId}${suffix}`);
+      }));
       setFormData(prev => {
         const newImages = [...(prev.images || []), ...imageUrls];
         return { ...prev, images: newImages, image: newImages[0] };
@@ -545,7 +536,9 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
     if (!file || replacingIndex === null) return;
     setUploading(true);
     try {
-      const newUrl = await uploadImageToCloudinary(file, formData.id);
+      const baseId = formData.imageId || formData.id || `img_${Date.now()}`;
+      const suffix = replacingIndex === 0 ? '' : `_${replacingIndex}`;
+      const newUrl = await uploadImageViaBackend(file, `${baseId}${suffix}`);
       setFormData(prev => {
         const imgs = [...(prev.images || [])];
         imgs[replacingIndex] = newUrl;
