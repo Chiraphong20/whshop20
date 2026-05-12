@@ -914,65 +914,68 @@ const AdminOrders: React.FC<AdminOrdersProps> = ({ orders, products, onUpdateSta
                                 const itemKey = `${pickingOrder.id}-${index}`;
 
                                 return (
-                                    <div key={index} className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all ${
+                                    <div key={index} className={`p-3 rounded-2xl border-2 transition-all ${
                                         isOutOfStock ? 'bg-red-50 border-red-200' :
                                         isPicked ? 'bg-green-50 border-green-300' :
                                         'bg-white border-gray-100'
                                     }`}>
-                                        {/* รูปสินค้า */}
-                                        {itemImg ? (
-                                            <img src={itemImg} alt={item.productName}
-                                                onClick={(e) => { e.stopPropagation(); setImagePreviewUrl(itemImg); }}
-                                                className="w-12 h-12 rounded-xl object-cover shrink-0 border border-gray-200 cursor-pointer hover:opacity-80"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-                                                <Package size={18} className="text-gray-300" />
-                                            </div>
-                                        )}
-
-                                        {/* ชื่อ + ราคา */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className={`font-semibold text-sm leading-snug line-clamp-2 ${isOutOfStock ? 'line-through text-red-400' : isPicked ? 'text-green-800' : 'text-gray-800'}`}>
-                                                {item.productName}
-                                            </div>
-                                            <div className="text-xs text-gray-400 mt-0.5">
-                                                ฿{itemPrice.toLocaleString()} / {itemUnit}
-                                                {itemUnitQty && itemUnit !== 'ชิ้น' && ` (${itemUnit}ละ ${itemUnitQty} ชิ้น)`}
+                                        {/* แถวบน: รูป + ชื่อสินค้า */}
+                                        <div className="flex items-center gap-2 mb-2">
+                                            {itemImg ? (
+                                                <img src={itemImg} alt={item.productName}
+                                                    onClick={(e) => { e.stopPropagation(); setImagePreviewUrl(itemImg); }}
+                                                    className="w-12 h-12 rounded-xl object-cover shrink-0 border border-gray-200 cursor-pointer hover:opacity-80"
+                                                />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+                                                    <Package size={18} className="text-gray-300" />
+                                                </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <div className={`font-semibold text-sm leading-snug ${isOutOfStock ? 'line-through text-red-400' : isPicked ? 'text-green-800' : 'text-gray-800'}`}>
+                                                    {item.productName}
+                                                </div>
+                                                <div className="text-xs text-gray-400 mt-0.5">
+                                                    ฿{itemPrice.toLocaleString()} / {itemUnit}
+                                                    {itemUnitQty && itemUnit !== 'ชิ้น' && ` (${itemUnit}ละ ${itemUnitQty} ชิ้น)`}
+                                                </div>
                                             </div>
                                         </div>
 
-                                        {/* ปุ่ม − qty + */}
-                                        <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                            <button onClick={() => handleQtyChange(pickingOrder.id, index, originalQty, -1)}
-                                                className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-red-100 hover:text-red-600 active:scale-95 transition-all">
-                                                <Minus size={15} />
-                                            </button>
-                                            <span className={`w-8 text-center font-bold text-base ${currentQty < originalQty ? 'text-orange-500' : 'text-gray-800'}`}>{currentQty}</span>
-                                            <button onClick={() => handleQtyChange(pickingOrder.id, index, originalQty, 1)}
-                                                className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-green-100 hover:text-green-600 active:scale-95 transition-all">
-                                                <Plus size={15} />
+                                        {/* แถวล่าง: ปุ่ม − qty + และ ✓ */}
+                                        <div className="flex items-center justify-between gap-2">
+                                            {/* ปุ่ม − qty + */}
+                                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                <button onClick={() => handleQtyChange(pickingOrder.id, index, originalQty, -1)}
+                                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-red-100 hover:text-red-600 active:scale-95 transition-all">
+                                                    <Minus size={16} />
+                                                </button>
+                                                <span className={`w-10 text-center font-bold text-lg ${currentQty < originalQty ? 'text-orange-500' : 'text-gray-800'}`}>{currentQty}</span>
+                                                <button onClick={() => handleQtyChange(pickingOrder.id, index, originalQty, 1)}
+                                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-green-100 hover:text-green-600 active:scale-95 transition-all">
+                                                    <Plus size={16} />
+                                                </button>
+                                            </div>
+
+                                            {/* ✓ ปุ่มติ๊ก */}
+                                            <button
+                                                onClick={() => {
+                                                    if (!isOutOfStock) {
+                                                        setPickedItemsState(prev => ({
+                                                            ...prev,
+                                                            [itemKey]: isPicked ? 'PENDING' : 'PICKED'
+                                                        }));
+                                                    }
+                                                }}
+                                                className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm transition-all active:scale-95 ${
+                                                    isOutOfStock ? 'bg-red-100 text-red-300 cursor-not-allowed' :
+                                                    isPicked ? 'bg-green-500 text-white shadow-md' :
+                                                    'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                                }`}
+                                            >
+                                                {isOutOfStock ? <><X size={16} /> หมด</> : isPicked ? <><CheckSquare size={16} /> จัดแล้ว</> : <><CheckSquare size={16} /> จัดของ</>}
                                             </button>
                                         </div>
-
-                                        {/* ✓ ปุ่มติ๊ก (ขวาสุด) */}
-                                        <button
-                                            onClick={() => {
-                                                if (!isOutOfStock) {
-                                                    setPickedItemsState(prev => ({
-                                                        ...prev,
-                                                        [itemKey]: isPicked ? 'PENDING' : 'PICKED'
-                                                    }));
-                                                }
-                                            }}
-                                            className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all active:scale-90 ${
-                                                isOutOfStock ? 'bg-red-100 text-red-300 cursor-not-allowed' :
-                                                isPicked ? 'bg-green-500 text-white shadow-md' :
-                                                'bg-gray-100 text-gray-300 hover:bg-gray-200'
-                                            }`}
-                                        >
-                                            {isOutOfStock ? <X size={20} /> : <CheckSquare size={20} />}
-                                        </button>
                                     </div>
                                 );
                             })}
