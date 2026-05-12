@@ -52,8 +52,11 @@ const uploadImageToCloudinary = async (file: File, publicId?: string): Promise<s
     method: 'POST',
     body: fd,
   });
-  if (!res.ok) throw new Error('Upload failed');
   const data = await res.json();
+  if (!res.ok) {
+    console.error('Cloudinary error:', data);
+    throw new Error(data?.error?.message || 'Upload failed');
+  }
   return (data.secure_url as string).replace('/upload/', '/upload/q_auto,f_auto,w_800/');
 };
 
