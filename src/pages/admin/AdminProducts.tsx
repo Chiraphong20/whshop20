@@ -959,15 +959,29 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
                           {(formData.images || []).map((imgUrl, idx) => (
                             <div key={idx} className="aspect-square bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden group">
                               <img src={imgUrl} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                                <button type="button"
-                                  onClick={() => { setReplacingIndex(idx); replaceInputRef.current?.click(); }}
-                                  className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 active:scale-95 transition-all" title="เปลี่ยนรูปใหม่">
-                                  <Upload size={14} />
-                                </button>
-                                <button type="button" onClick={() => handleRemoveImage(idx)} className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 active:scale-95 transition-all" title="ลบรูปนี้">
-                                  <Trash2 size={14} />
-                                </button>
+                              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                                <div className="flex gap-2">
+                                  <button type="button"
+                                    onClick={() => { setReplacingIndex(idx); replaceInputRef.current?.click(); }}
+                                    className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 active:scale-95 transition-all" title="เปลี่ยนรูปใหม่">
+                                    <Upload size={14} />
+                                  </button>
+                                  <button type="button" onClick={() => handleRemoveImage(idx)} className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 active:scale-95 transition-all" title="ลบรูปนี้">
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                                {idx !== 0 && (
+                                  <button type="button"
+                                    onClick={() => setFormData(prev => {
+                                      const imgs = [...(prev.images || [])];
+                                      const [picked] = imgs.splice(idx, 1);
+                                      imgs.unshift(picked);
+                                      return { ...prev, images: imgs, image: picked };
+                                    })}
+                                    className="bg-orange-500 text-white text-[11px] font-bold px-3 py-1 rounded-full hover:bg-orange-600 active:scale-95 transition-all">
+                                    ⭐ ตั้งเป็นรูปหลัก
+                                  </button>
+                                )}
                               </div>
                               {idx === 0 && <span className="absolute top-1 left-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold shadow-sm">รูปหลัก</span>}
                               {uploading && replacingIndex === idx && (
