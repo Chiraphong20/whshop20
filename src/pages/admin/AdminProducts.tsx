@@ -29,33 +29,20 @@ export interface Product {
 
 const UPLOAD_PRESET = 'my_shop_preset';
 
-const getPublicIdFromUrl = (url: string): string | undefined => {
-  try {
-    // https://res.cloudinary.com/xxx/image/upload/q_auto,f_auto,w_800/v123/IMG-001.jpg
-    // extract everything after the last transformation segment
-    const match = url.match(/\/upload\/(?:[^/]+\/)*v?\d*\/?(.+?)(?:\.\w+)?$/);
-    if (match?.[1]) return match[1].replace(/^v\d+\//, '');
-  } catch { /* ignore */ }
-  return undefined;
-};
 
-const uploadImageToCloudinary = async (file: File, publicId?: string): Promise<string> => {
+const uploadImageToCloudinary = async (file: File): Promise<string> => {
   const fd = new FormData();
   fd.append('file', file);
   fd.append('upload_preset', UPLOAD_PRESET);
-  if (publicId) {
-    fd.append('public_id', publicId);
-    fd.append('overwrite', 'true');
-    fd.append('invalidate', 'true');
-  }
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
     method: 'POST',
     body: fd,
   });
   const data = await res.json();
   if (!res.ok) {
-    console.error('Cloudinary error:', data);
-    throw new Error(data?.error?.message || 'Upload failed');
+    const msg = data?.error?.message || JSON.stringify(data);
+    console.error('Cloudinary error:', msg);
+    throw new Error(msg);
   }
   return (data.secure_url as string).replace('/upload/', '/upload/q_auto,f_auto,w_800/');
 };
@@ -542,8 +529,8 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
         return { ...prev, images: newImages, image: newImages[0] };
       });
       message.success(`อัปโหลดรูปภาพสำเร็จ ${imageUrls.length} รูป`);
-    } catch {
-      message.error('อัปโหลดรูปภาพล้มเหลว กรุณาลองใหม่');
+    } catch (err: any) {
+      message.error(`อัปโหลดล้มเหลว: ${err?.message || err}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -555,17 +542,15 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
     if (!file || replacingIndex === null) return;
     setUploading(true);
     try {
-      const existingUrl = (formData.images || [])[replacingIndex];
-      const publicId = existingUrl ? getPublicIdFromUrl(existingUrl) : undefined;
-      const newUrl = await uploadImageToCloudinary(file, publicId);
+      const newUrl = await uploadImageToCloudinary(file);
       setFormData(prev => {
         const imgs = [...(prev.images || [])];
         imgs[replacingIndex] = newUrl;
         return { ...prev, images: imgs, image: replacingIndex === 0 ? newUrl : (prev.image || imgs[0]) };
       });
       message.success('เปลี่ยนรูปภาพสำเร็จ');
-    } catch {
-      message.error('อัปโหลดรูปภาพล้มเหลว กรุณาลองใหม่');
+    } catch (err: any) {
+      message.error(`อัปโหลดล้มเหลว: ${err?.message || err}`);
     } finally {
       setUploading(false);
       setReplacingIndex(null);
