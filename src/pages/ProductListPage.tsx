@@ -44,9 +44,17 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount,
     fetchProducts();
   }, []);
 
-  // กรองสินค้าตามหมวดหมู่ หรือคำนวณสินค้าขายดี
+  const twentyDaysAgo = new Date();
+  twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
+
+  // กรองสินค้าตามหมวดหมู่ หรือคำนวณสินค้าขายดี/สินค้าใหม่
   let filtered: Product[] = [];
-  if (decodedCategory === 'สินค้าขายดี') {
+  if (decodedCategory === 'สินค้าใหม่') {
+    filtered = products.filter(p =>
+      p.createdAt && new Date(p.createdAt) >= twentyDaysAgo &&
+      p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  } else if (decodedCategory === 'สินค้าขายดี') {
     const productSales: Record<string, number> = {};
     allOrders.forEach(order => {
       if (order.status === 'CANCELLED') return;

@@ -528,8 +528,8 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   try {
     const { id, barcode, name, category, retailPrice, wholesalePrice, minWholesaleQty, unitQty, bulkQty, bulkPrice, stock, unit, image, imageId, images, description } = req.body;
-    const sql = `INSERT INTO products (id, barcode, name, category, retailPrice, wholesalePrice, minWholesaleQty, unitQty, bulkQty, bulkPrice, stock, unit, image, imageId, images, description) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO products (id, barcode, name, category, retailPrice, wholesalePrice, minWholesaleQty, unitQty, bulkQty, bulkPrice, stock, unit, image, imageId, images, description, createdAt)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
     const values = [id, barcode || null, name, category, retailPrice, wholesalePrice, minWholesaleQty, unitQty || 1, bulkQty || 0, bulkPrice || 0, stock, unit || 'ชิ้น', image || '', imageId || '', JSON.stringify(images || []), description || ''];
 
     await pool.execute(sql, values);
@@ -546,12 +546,12 @@ app.post('/api/products/bulk', async (req, res) => {
     let added = 0;
 
     for (const p of products) {
-      const sql = `INSERT INTO products (id, barcode, name, category, retailPrice, wholesalePrice, minWholesaleQty, unitQty, bulkQty, bulkPrice, stock, unit, image, imageId, images, description) 
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                   ON DUPLICATE KEY UPDATE 
-                   barcode=VALUES(barcode), name=VALUES(name), category=VALUES(category), retailPrice=VALUES(retailPrice), 
-                   wholesalePrice=VALUES(wholesalePrice), minWholesaleQty=VALUES(minWholesaleQty), unitQty=VALUES(unitQty), 
-                   bulkQty=VALUES(bulkQty), bulkPrice=VALUES(bulkPrice), stock=VALUES(stock), 
+      const sql = `INSERT INTO products (id, barcode, name, category, retailPrice, wholesalePrice, minWholesaleQty, unitQty, bulkQty, bulkPrice, stock, unit, image, imageId, images, description, createdAt)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                   ON DUPLICATE KEY UPDATE
+                   barcode=VALUES(barcode), name=VALUES(name), category=VALUES(category), retailPrice=VALUES(retailPrice),
+                   wholesalePrice=VALUES(wholesalePrice), minWholesaleQty=VALUES(minWholesaleQty), unitQty=VALUES(unitQty),
+                   bulkQty=VALUES(bulkQty), bulkPrice=VALUES(bulkPrice), stock=VALUES(stock),
                    unit=VALUES(unit), image=VALUES(image), imageId=VALUES(imageId), images=VALUES(images), description=VALUES(description)`;
 
       const values = [p.id, p.barcode || null, p.name, p.category, p.retailPrice, p.wholesalePrice, p.minWholesaleQty, p.unitQty || 1, p.bulkQty || 0, p.bulkPrice || 0, p.stock || 0, p.unit || 'ชิ้น', p.image || '', p.imageId || '', JSON.stringify(p.images || []), p.description || ''];
