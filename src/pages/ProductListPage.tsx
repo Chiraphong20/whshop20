@@ -224,14 +224,16 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount 
                       {index + 1}
                     </div>
                   )}
-                  {/* Badge ยอดขาย */}
-                  <div className={`absolute top-2 right-2 z-10 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow ${
-                    activeTab === 'trending' ? 'bg-orange-500' : 'bg-yellow-500'
-                  }`}>
-                    {activeTab === 'trending'
-                      ? `${(p as any).trendQty || 0} ชิ้น/สัปดาห์`
-                      : `${(p as any).soldQty || p.soldQty || 0} ชิ้น`}
-                  </div>
+                  {/* Badge ยอดขาย (ซ่อนถ้าเป็น fallback) */}
+                  {!(p as any)._isFallback && (
+                    <div className={`absolute top-2 right-2 z-10 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow ${
+                      activeTab === 'trending' ? 'bg-orange-500' : 'bg-yellow-500'
+                    }`}>
+                      {activeTab === 'trending'
+                        ? `${(p as any).trendQty || 0} ชิ้น/${(p as any)._usedDays ? `${(p as any)._usedDays}วัน` : 'สัปดาห์'}`
+                        : `${(p as any).soldQty || p.soldQty || 0} ชิ้น`}
+                    </div>
+                  )}
                   <ProductCard
                     product={p}
                     isNew={false}

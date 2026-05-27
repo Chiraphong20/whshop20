@@ -64,18 +64,53 @@ app.use(express.json());
 })();
 
 // =========================================================
-// 📈 Migration: เพิ่มคอลัมน์ soldQty ถ้ายังไม่มี
+// 📈 Migration: เพิ่มคอลัมน์ soldQty + Backfill จากออเดอร์เก่า
 // =========================================================
 (async () => {
   try {
-    await pool.execute(`ALTER TABLE products ADD COLUMN soldQty INT NOT NULL DEFAULT 0`);
-    console.log('✅ soldQty column added to products');
-  } catch (e) {
-    if (e.code === 'ER_DUP_FIELDNAME') {
+    // 1. เพิ่มคอลัมน์ถ้ายังไม่มี
+    try {
+      await pool.execute(`ALTER TABLE products ADD COLUMN soldQty INT NOT NULL DEFAULT 0`);
+      console.log('✅ soldQty column added to products');
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') throw e;
       console.log('ℹ️ soldQty column already exists');
-    } else {
-      console.error('soldQty migration error:', e.message);
     }
+
+    // 2. Backfill: คำนวณ soldQty จากออเดอร์เก่าทั้งหมดที่ไม่ถูกยกเลิก
+    const [orders] = await pool.query(
+      "SELECT items FROM orders WHERE status IN ('CONFIRMED', 'SHIPPED', 'COMPLETED')"
+    );
+
+    const soldMap = {};
+    for (const order of orders) {
+      const items = typeof order.items === 'string'
+        ? JSON.parse(order.items)
+        : (order.items || []);
+      for (const item of items) {
+        if (item.productId) {
+          soldMap[item.productId] = (soldMap[item.productId] || 0) + (Number(item.quantity) || 0);
+        }
+      }
+    }
+
+    // 3. อัปเดต soldQty เฉพาะสินค้าที่มียอดขาย
+    let updated = 0;
+    for (const [productId, qty] of Object.entries(soldMap)) {
+      await pool.execute(
+        'UPDATE products SET soldQty = ? WHERE id = ? AND soldQty < ?',
+        [qty, productId, qty]
+      );
+      updated++;
+    }
+
+    if (updated > 0) {
+      console.log(`✅ soldQty backfilled: ${updated} สินค้าได้รับการอัปเดต`);
+    } else {
+      console.log('ℹ️ soldQty backfill: ข้อมูลเป็นปัจจุบันแล้ว');
+    }
+  } catch (e) {
+    console.error('soldQty migration/backfill error:', e.message);
   }
 })();
 
@@ -537,48 +572,76 @@ app.put('/api/orders/:id/shipping', async (req, res) => {
 // 📦 4. API: จัดการสินค้า (Products)
 // =========================================================
 
-// ⭐ สินค้าขายดีตลอดกาล (เรียงตาม soldQty สูงสุด)
+// ⭐ สินค้าขายดีตลอดกาล (เรียงตาม soldQty สูงสุด — ถ้าไม่มีข้อมูล fallback เป็นสินค้าที่มี stock เยอะสุด)
 app.get('/api/products/best-sellers', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+
+    // ลอง query สินค้าที่มี soldQty จริงๆ ก่อน
     const [rows] = await pool.query(
       'SELECT * FROM products WHERE COALESCE(soldQty, 0) > 0 ORDER BY soldQty DESC LIMIT ?',
       [limit]
     );
-    res.json(rows);
+
+    if (rows.length > 0) return res.json(rows);
+
+    // Fallback: ยังไม่มีข้อมูล sales → คืนสินค้าที่มี stock มากที่สุด (เป็น placeholder)
+    const [fallback] = await pool.query(
+      'SELECT * FROM products WHERE stock > 0 ORDER BY stock DESC LIMIT ?',
+      [limit]
+    );
+    res.json(fallback.map(p => ({ ...p, soldQty: 0, _isFallback: true })));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 🔥 สินค้ามาแรง (คำนวณจากออเดอร์ใน 7 วันล่าสุด)
+// 🔥 สินค้ามาแรง (ขยาย window อัตโนมัติ: 7 → 30 → 90 → ทั้งหมด ถ้าไม่พบข้อมูล)
 app.get('/api/products/trending', async (req, res) => {
   try {
-    const days = Math.min(parseInt(req.query.days) || 7, 90);
+    const requestedDays = Math.min(parseInt(req.query.days) || 7, 365);
     const limit = Math.min(parseInt(req.query.limit) || 10, 50);
 
-    // ดึงออเดอร์ที่ไม่ถูกยกเลิกในช่วงเวลาที่กำหนด
-    const [recentOrders] = await pool.query(
-      `SELECT items FROM orders WHERE status != 'CANCELLED' AND timestamp >= DATE_SUB(NOW(), INTERVAL ? DAY)`,
-      [days]
-    );
+    // ลอง window หลายช่วง เพิ่มจาก requestedDays ออกไปเรื่อยๆ
+    const windows = [...new Set([requestedDays, 30, 90, 99999])];
+    let productSales = {};
+    let usedDays = requestedDays;
 
-    // คำนวณยอดขายต่อสินค้า
-    const productSales = {};
-    for (const order of recentOrders) {
-      const items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
-      for (const item of items) {
-        if (item.productId) {
-          productSales[item.productId] = (productSales[item.productId] || 0) + (Number(item.quantity) || 0);
+    for (const days of windows) {
+      const timeFilter = days < 99999
+        ? `AND timestamp >= DATE_SUB(NOW(), INTERVAL ${days} DAY)`
+        : '';
+      const [recentOrders] = await pool.query(
+        `SELECT items FROM orders WHERE status NOT IN ('CANCELLED') ${timeFilter}`
+      );
+
+      productSales = {};
+      for (const order of recentOrders) {
+        const items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
+        for (const item of items) {
+          if (item.productId) {
+            productSales[item.productId] = (productSales[item.productId] || 0) + (Number(item.quantity) || 0);
+          }
         }
+      }
+
+      if (Object.keys(productSales).length > 0) {
+        usedDays = days;
+        break; // พบข้อมูลแล้ว ไม่ต้องขยาย window ต่อ
       }
     }
 
-    // เรียงลำดับและเลือก Top N
     const topIds = Object.entries(productSales)
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
       .map(([id]) => id);
 
-    if (topIds.length === 0) return res.json([]);
+    if (topIds.length === 0) {
+      // Fallback จริงๆ: ไม่มีออเดอร์เลยในระบบ → คืนสินค้าใหม่ล่าสุด
+      const [fallback] = await pool.query(
+        'SELECT * FROM products WHERE stock > 0 ORDER BY createdAt DESC LIMIT ?',
+        [limit]
+      );
+      return res.json(fallback.map(p => ({ ...p, trendQty: 0, _isFallback: true })));
+    }
 
     const placeholders = topIds.map(() => '?').join(',');
     const [products] = await pool.query(
@@ -586,9 +649,8 @@ app.get('/api/products/trending', async (req, res) => {
       topIds
     );
 
-    // เพิ่ม trendQty และเรียงตามยอดขายช่วงเวลา
     const sorted = products
-      .map(p => ({ ...p, trendQty: productSales[p.id] || 0 }))
+      .map(p => ({ ...p, trendQty: productSales[p.id] || 0, _usedDays: usedDays < 99999 ? usedDays : null }))
       .sort((a, b) => b.trendQty - a.trendQty);
 
     res.json(sorted);
