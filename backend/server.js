@@ -63,6 +63,22 @@ app.use(express.json());
   } catch (e) { console.error('activity_logs table error:', e.message); }
 })();
 
+// =========================================================
+// 📈 Migration: เพิ่มคอลัมน์ soldQty ถ้ายังไม่มี
+// =========================================================
+(async () => {
+  try {
+    await pool.execute(`ALTER TABLE products ADD COLUMN soldQty INT NOT NULL DEFAULT 0`);
+    console.log('✅ soldQty column added to products');
+  } catch (e) {
+    if (e.code === 'ER_DUP_FIELDNAME') {
+      console.log('ℹ️ soldQty column already exists');
+    } else {
+      console.error('soldQty migration error:', e.message);
+    }
+  }
+})();
+
 const logActivity = async (action, entityType, entityId, description, performedBy) => {
   try {
     await pool.execute(
@@ -454,10 +470,13 @@ app.put('/api/orders/:id/status', async (req, res) => {
     const currentStatus = orders[0].status;
     const items = typeof orders[0].items === 'string' ? JSON.parse(orders[0].items) : orders[0].items;
 
-    // Deduct stock if transitioning to CONFIRMED
+    // Deduct stock & increase soldQty if transitioning to CONFIRMED
     if (currentStatus === 'PENDING' && status === 'CONFIRMED') {
       for (const item of items) {
-        await pool.execute('UPDATE products SET stock = GREATEST(stock - ?, 0) WHERE id = ?', [item.quantity, item.productId]);
+        await pool.execute(
+          'UPDATE products SET stock = GREATEST(stock - ?, 0), soldQty = COALESCE(soldQty, 0) + ? WHERE id = ?',
+          [item.quantity, item.quantity, item.productId]
+        );
       }
     }
 
@@ -517,6 +536,64 @@ app.put('/api/orders/:id/shipping', async (req, res) => {
 // =========================================================
 // 📦 4. API: จัดการสินค้า (Products)
 // =========================================================
+
+// ⭐ สินค้าขายดีตลอดกาล (เรียงตาม soldQty สูงสุด)
+app.get('/api/products/best-sellers', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const [rows] = await pool.query(
+      'SELECT * FROM products WHERE COALESCE(soldQty, 0) > 0 ORDER BY soldQty DESC LIMIT ?',
+      [limit]
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 🔥 สินค้ามาแรง (คำนวณจากออเดอร์ใน 7 วันล่าสุด)
+app.get('/api/products/trending', async (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days) || 7, 90);
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+
+    // ดึงออเดอร์ที่ไม่ถูกยกเลิกในช่วงเวลาที่กำหนด
+    const [recentOrders] = await pool.query(
+      `SELECT items FROM orders WHERE status != 'CANCELLED' AND timestamp >= DATE_SUB(NOW(), INTERVAL ? DAY)`,
+      [days]
+    );
+
+    // คำนวณยอดขายต่อสินค้า
+    const productSales = {};
+    for (const order of recentOrders) {
+      const items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
+      for (const item of items) {
+        if (item.productId) {
+          productSales[item.productId] = (productSales[item.productId] || 0) + (Number(item.quantity) || 0);
+        }
+      }
+    }
+
+    // เรียงลำดับและเลือก Top N
+    const topIds = Object.entries(productSales)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([id]) => id);
+
+    if (topIds.length === 0) return res.json([]);
+
+    const placeholders = topIds.map(() => '?').join(',');
+    const [products] = await pool.query(
+      `SELECT * FROM products WHERE id IN (${placeholders})`,
+      topIds
+    );
+
+    // เพิ่ม trendQty และเรียงตามยอดขายช่วงเวลา
+    const sorted = products
+      .map(p => ({ ...p, trendQty: productSales[p.id] || 0 }))
+      .sort((a, b) => b.trendQty - a.trendQty);
+
+    res.json(sorted);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 app.get('/api/products', async (req, res) => {
   try {
