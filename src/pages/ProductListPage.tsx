@@ -23,7 +23,6 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount 
   // 📈 State สำหรับหน้าสินค้าขายดี
   const [bestSellers, setBestSellers] = useState<(Product & { soldQty?: number })[]>([]);
   const [trending, setTrending] = useState<(Product & { trendQty?: number })[]>([]);
-  const [activeTab, setActiveTab] = useState<'trending' | 'best'>('trending');
   const [isBestLoading, setIsBestLoading] = useState(true);
 
   const decodedCategory = decodeURIComponent(categoryName || '');
@@ -89,13 +88,16 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount 
     );
   }
 
-  // กรองสินค้าขายดีตาม searchQuery
-  const filteredTrending = trending.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const filteredBestSellers = bestSellers.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // รวม trending + bestSellers เป็นรายการเดียว (trending มาก่อน, ไม่ซ้ำกัน)
+  const bestSellerIds = new Set(bestSellers.map(p => p.id));
+  const combinedMap = new Map<string, any>();
+  trending.forEach(p => combinedMap.set(p.id, { ...p, _isTrending: true, _isBest: bestSellerIds.has(p.id) }));
+  bestSellers.forEach(p => {
+    if (!combinedMap.has(p.id)) combinedMap.set(p.id, { ...p, _isTrending: false, _isBest: true });
+    else combinedMap.set(p.id, { ...combinedMap.get(p.id), _isBest: true });
+  });
+  const combined = Array.from(combinedMap.values())
+    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   // Skeleton loader
   const SkeletonGrid = () => (
@@ -121,10 +123,9 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount 
   );
 
   // =====================================================
-  // 🏆 UI สำหรับหน้าสินค้าขายดี (2 แท็บ)
+  // 🏆 UI สำหรับหน้าสินค้าขายดี (รวม มาแรง + ขายดีที่สุด)
   // =====================================================
   if (isBestSellerPage) {
-    const activeProducts = activeTab === 'trending' ? filteredTrending : filteredBestSellers;
     return (
       <div className="h-screen bg-slate-100 flex flex-col">
         <Header title="สินค้าขายดี" backTo="/shop" cartCount={cartCount} />
@@ -143,78 +144,33 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount 
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="bg-white border-b border-slate-200 px-4 pt-3 pb-0">
-          <div className="flex gap-1">
-            <button
-              onClick={() => setActiveTab('trending')}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold rounded-t-lg transition-all border-b-2 ${
-                activeTab === 'trending'
-                  ? 'border-orange-500 text-orange-600 bg-orange-50'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <TrendingUp size={15} />
-              มาแรง 🔥
-              {!isBestLoading && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                  activeTab === 'trending' ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400'
-                }`}>
-                  {filteredTrending.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('best')}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold rounded-t-lg transition-all border-b-2 ${
-                activeTab === 'best'
-                  ? 'border-yellow-500 text-yellow-600 bg-yellow-50'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <Star size={15} />
-              ขายดีที่สุด ⭐
-              {!isBestLoading && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                  activeTab === 'best' ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 text-slate-400'
-                }`}>
-                  {filteredBestSellers.length}
-                </span>
-              )}
-            </button>
+        {/* Badge summary */}
+        {!isBestLoading && (
+          <div className="bg-white px-4 pb-2 pt-1 flex items-center gap-2 border-b border-slate-100">
+            <span className="flex items-center gap-1 bg-orange-50 text-orange-600 text-xs font-bold px-2 py-1 rounded-full border border-orange-100">
+              <TrendingUp size={11} /> มาแรง {trending.length}
+            </span>
+            <span className="text-slate-300 text-xs">+</span>
+            <span className="flex items-center gap-1 bg-yellow-50 text-yellow-600 text-xs font-bold px-2 py-1 rounded-full border border-yellow-100">
+              <Star size={11} /> ขายดีที่สุด {bestSellers.length}
+            </span>
+            <span className="ml-auto text-slate-400 text-xs">{combined.length} รายการ</span>
           </div>
-        </div>
-
-        {/* Description banner */}
-        <div className={`px-4 py-2 text-xs font-medium ${
-          activeTab === 'trending'
-            ? 'bg-orange-50 text-orange-700 border-b border-orange-100'
-            : 'bg-yellow-50 text-yellow-700 border-b border-yellow-100'
-        }`}>
-          {activeTab === 'trending'
-            ? '🔥 สินค้าที่มีคนสั่งซื้อมากที่สุดใน 7 วันล่าสุด'
-            : '⭐ สินค้าที่มียอดขายสะสมสูงสุดตลอดกาล'}
-        </div>
+        )}
 
         {/* Product Grid */}
         <div className="flex-1 overflow-y-auto p-4 bg-slate-100">
           {isBestLoading ? (
             <SkeletonGrid />
-          ) : activeProducts.length === 0 ? (
+          ) : combined.length === 0 ? (
             <div className="text-center py-20 text-slate-400">
               <ShoppingBag size={48} className="mx-auto mb-4 opacity-20" />
-              <p className="font-medium">
-                {activeTab === 'trending'
-                  ? 'ยังไม่มีข้อมูลสินค้ามาแรงในช่วงนี้'
-                  : 'ยังไม่มีข้อมูลสินค้าขายดี'}
-              </p>
-              <p className="text-xs mt-1 text-slate-300">
-                ระบบจะอัปเดตข้อมูลเมื่อมีการสั่งซื้อสินค้า
-              </p>
+              <p className="font-medium">ยังไม่มีข้อมูลสินค้าขายดี</p>
+              <p className="text-xs mt-1 text-slate-300">ระบบจะอัปเดตเมื่อมีการสั่งซื้อสินค้า</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 pb-20">
-              {activeProducts.map((p, index) => (
+              {combined.map((p, index) => (
                 <div key={p.id} className="relative">
                   {/* Badge อันดับ */}
                   {index < 3 && (
@@ -224,21 +180,22 @@ const ProductListPage: React.FC<ProductListPageProps> = ({ addToCart, cartCount 
                       {index + 1}
                     </div>
                   )}
-                  {/* Badge ยอดขาย (ซ่อนถ้าเป็น fallback) */}
-                  {!(p as any)._isFallback && (
-                    <div className={`absolute top-2 right-2 z-10 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow ${
-                      activeTab === 'trending' ? 'bg-orange-500' : 'bg-yellow-500'
-                    }`}>
-                      {activeTab === 'trending'
-                        ? `${(p as any).trendQty || 0} ชิ้น/${(p as any)._usedDays ? `${(p as any)._usedDays}วัน` : 'สัปดาห์'}`
-                        : `${(p as any).soldQty || p.soldQty || 0} ชิ้น`}
+                  {/* Badge ประเภท */}
+                  {!p._isFallback && (
+                    <div className="absolute top-2 right-2 z-10 flex flex-col gap-0.5 items-end">
+                      {p._isTrending && (
+                        <span className="bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow leading-tight">
+                          🔥 {p.trendQty || 0}{p._usedDays ? `/${p._usedDays}ว` : '/7ว'}
+                        </span>
+                      )}
+                      {p._isBest && (p.soldQty || 0) > 0 && (
+                        <span className="bg-yellow-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow leading-tight">
+                          ⭐ {p.soldQty || 0} ชิ้น
+                        </span>
+                      )}
                     </div>
                   )}
-                  <ProductCard
-                    product={p}
-                    isNew={false}
-                    onAddToCart={addToCart}
-                  />
+                  <ProductCard product={p} isNew={false} onAddToCart={addToCart} />
                 </div>
               ))}
             </div>
