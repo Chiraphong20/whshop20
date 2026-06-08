@@ -193,11 +193,9 @@ const AdminProducts: React.FC<AdminProductsProps> = ({ onAdd, onEdit, onDelete, 
 
     let finalImages = [...(formData.images || [])];
 
-    if (formData.imageId) {
-      const idUrl = `${CLOUDINARY_BASE_URL}${formData.imageId}.jpg`;
-      if (!finalImages.includes(idUrl)) {
-        finalImages.unshift(idUrl);
-      }
+    // ใช้ imageId เป็น fallback เฉพาะเมื่อยังไม่มีรูปเลย
+    if (finalImages.length === 0 && formData.imageId) {
+      finalImages.push(`${CLOUDINARY_BASE_URL}${formData.imageId}.jpg`);
     }
 
     const finalImageUrl = finalImages.length > 0 ? finalImages[0] : (formData.image || '');
